@@ -11,11 +11,20 @@
   </head>
   <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
     <!-- Global Header -->
-    <header class="bg-slate-800 text-white p-3 shadow-md shrink-0 sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
-        <h1 class="text-lg font-bold flex items-center gap-2">
-          <i class="fas fa-dice"></i> Dual Jamb
-        </h1>
+    <header class="bg-slate-800 text-white p-3 shadow-md shrink-0">
+      <div class="max-w-7xl mx-auto flex flex-col gap-2">
+        <div class="flex items-center justify-between gap-2">
+          <h1 class="text-lg font-bold flex items-center gap-2">
+            <i class="fas fa-dice"></i> Dual Jamb
+          </h1>
+
+          <button
+            onclick="resetGame()"
+            class="text-xs bg-red-500/20 text-red-300 hover:bg-red-500/40 px-3 py-1 rounded transition-colors border border-red-500/30"
+          >
+            <i class="fas fa-trash-alt mr-1"></i> Reset
+          </button>
+        </div>
 
         <!-- Score Summary -->
         <div class="flex gap-4 text-xs sm:text-sm bg-slate-700 rounded-lg p-1 px-3">
@@ -32,25 +41,13 @@
             <span id="super-total" class="font-mono font-bold text-yellow-300 text-lg">0</span>
           </div>
         </div>
-
-        <button
-          onclick="resetGame()"
-          class="text-xs bg-red-500/20 text-red-300 hover:bg-red-500/40 px-3 py-1 rounded transition-colors border border-red-500/30"
-        >
-          <i class="fas fa-trash-alt mr-1"></i> Reset
-        </button>
       </div>
     </header>
 
     <!-- Dice Roller Bar -->
-    <section class="bg-white/90 border-b border-slate-200">
+    <section class="bg-white/90 border-b border-slate-200 sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-3 py-3 flex flex-col gap-3">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div class="flex items-center gap-2 text-sm font-semibold text-slate-700">
-            <i class="fas fa-dice text-slate-500"></i>
-            Roll 5 Dice
-            <span class="text-[11px] text-slate-400 font-medium">(lock 0–5, roll up to 3x)</span>
-          </div>
           <div class="flex flex-wrap items-center gap-2">
             <button
               id="roll-dice-btn"
@@ -80,46 +77,46 @@
           <label class="cursor-pointer" data-die="0">
             <input type="checkbox" class="peer sr-only" />
             <div
-              class="h-16 w-16 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1.5 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
+              class="h-20 w-20 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
             >
-              <i class="fas fa-dice-one text-3xl" data-die-face></i>
-              <i class="fas fa-lock text-xs opacity-0 peer-checked:opacity-70 transition-opacity"></i>
+              <i class="fas fa-dice-one text-5xl" data-die-face></i>
+              <i class="fas fa-lock text-sm opacity-0 peer-checked:opacity-70 transition-opacity"></i>
             </div>
           </label>
           <label class="cursor-pointer" data-die="1">
             <input type="checkbox" class="peer sr-only" />
             <div
-              class="h-16 w-16 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1.5 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
+              class="h-20 w-20 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
             >
-              <i class="fas fa-dice-two text-3xl" data-die-face></i>
-              <i class="fas fa-lock text-xs opacity-0 peer-checked:opacity-70 transition-opacity"></i>
+              <i class="fas fa-dice-two text-5xl" data-die-face></i>
+              <i class="fas fa-lock text-sm opacity-0 peer-checked:opacity-70 transition-opacity"></i>
             </div>
           </label>
           <label class="cursor-pointer" data-die="2">
             <input type="checkbox" class="peer sr-only" />
             <div
-              class="h-16 w-16 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1.5 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
+              class="h-20 w-20 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
             >
-              <i class="fas fa-dice-three text-3xl" data-die-face></i>
-              <i class="fas fa-lock text-xs opacity-0 peer-checked:opacity-70 transition-opacity"></i>
+              <i class="fas fa-dice-three text-5xl" data-die-face></i>
+              <i class="fas fa-lock text-sm opacity-0 peer-checked:opacity-70 transition-opacity"></i>
             </div>
           </label>
           <label class="cursor-pointer" data-die="3">
             <input type="checkbox" class="peer sr-only" />
             <div
-              class="h-16 w-16 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1.5 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
+              class="h-20 w-20 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
             >
-              <i class="fas fa-dice-four text-3xl" data-die-face></i>
-              <i class="fas fa-lock text-xs opacity-0 peer-checked:opacity-70 transition-opacity"></i>
+              <i class="fas fa-dice-four text-5xl" data-die-face></i>
+              <i class="fas fa-lock text-sm opacity-0 peer-checked:opacity-70 transition-opacity"></i>
             </div>
           </label>
           <label class="cursor-pointer" data-die="4">
             <input type="checkbox" class="peer sr-only" />
             <div
-              class="h-16 w-16 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1.5 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
+              class="h-20 w-20 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
             >
-              <i class="fas fa-dice-five text-3xl" data-die-face></i>
-              <i class="fas fa-lock text-xs opacity-0 peer-checked:opacity-70 transition-opacity"></i>
+              <i class="fas fa-dice-five text-5xl" data-die-face></i>
+              <i class="fas fa-lock text-sm opacity-0 peer-checked:opacity-70 transition-opacity"></i>
             </div>
           </label>
         </div>

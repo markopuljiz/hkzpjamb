@@ -36,6 +36,56 @@ let isRolling = false;
 let najavaActive = false;
 let najavaRowId = null;
 
+const diceStateStorageKey = 'dual_jamb_dice_v1';
+
+function saveDiceState() {
+  const locked = Array(5).fill(false);
+  document.querySelectorAll('[data-die]').forEach((label) => {
+    const dieIndex = parseInt(label.dataset.die, 10);
+    const checkbox = label.querySelector('input[type="checkbox"]');
+    if (!Number.isNaN(dieIndex) && dieIndex >= 0 && dieIndex < 5) {
+      locked[dieIndex] = !!checkbox?.checked;
+    }
+  });
+
+  localStorage.setItem(
+    diceStateStorageKey,
+    JSON.stringify({ diceValues, rollsLeft, locked })
+  );
+}
+
+function loadDiceState() {
+  const raw = localStorage.getItem(diceStateStorageKey);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    const nextRollsLeft = Number.isInteger(parsed?.rollsLeft) ? parsed.rollsLeft : null;
+    const nextDiceValues = Array.isArray(parsed?.diceValues) ? parsed.diceValues : null;
+    const nextLocked = Array.isArray(parsed?.locked) ? parsed.locked : null;
+
+    if (nextRollsLeft === null || nextRollsLeft < 0 || nextRollsLeft > 3) return null;
+    if (!nextDiceValues || nextDiceValues.length !== 5) return null;
+    if (!nextLocked || nextLocked.length !== 5) return null;
+
+    const normalizedDice = nextDiceValues.map((v) => {
+      if (v === null) return null;
+      const n = Number(v);
+      if (!Number.isInteger(n) || n < 1 || n > 6) return null;
+      return n;
+    });
+
+    const normalizedLocked = nextLocked.map((v) => !!v);
+
+    return { rollsLeft: nextRollsLeft, diceValues: normalizedDice, locked: normalizedLocked };
+  } catch {
+    return null;
+  }
+}
+
+function clearDiceState() {
+  localStorage.removeItem(diceStateStorageKey);
+}
+
 // --- Init ---
 function init() {
   tables.forEach((t) => renderTableContainer(t));
@@ -86,7 +136,7 @@ function initDiceRoller() {
       'fa-dice-five',
       'fa-dice-six'
     ];
-    faceEl.className = `fas ${diceIcons[value - 1]} text-3xl`;
+    faceEl.className = `fas ${diceIcons[value - 1]} text-5xl`;
     faceEl.classList.remove('dice-empty');
   };
 
@@ -95,8 +145,21 @@ function initDiceRoller() {
     if (!label) return;
     const faceEl = label.querySelector('[data-die-face]');
     if (!faceEl) return;
-    faceEl.className = 'fas fa-dice text-3xl dice-empty';
+    faceEl.className = 'fas fa-dice text-5xl dice-empty';
   };
+
+  const restored = loadDiceState();
+  if (restored) {
+    rollsLeft = restored.rollsLeft;
+    diceValues = restored.diceValues;
+    dieLabels.forEach((label) => {
+      const dieIndex = parseInt(label.dataset.die, 10);
+      const checkbox = label.querySelector('input[type="checkbox"]');
+      if (checkbox && !Number.isNaN(dieIndex) && dieIndex >= 0 && dieIndex < 5) {
+        checkbox.checked = !!restored.locked[dieIndex];
+      }
+    });
+  }
 
   const rollDice = () => {
     if (rollsLeft <= 0 || isRolling) return;
@@ -128,6 +191,10 @@ function initDiceRoller() {
         rollsLeft -= 1;
         isRolling = false;
         updateRollStatus();
+        if (rollsLeft === 0) {
+          setSubmitPreviewActive(true);
+        }
+        saveDiceState();
         if (submitPreviewActive) renderSubmitPreviews();
         return;
       }
@@ -138,6 +205,7 @@ function initDiceRoller() {
       diceValues[dieIndex] = finalValue;
       setDieFace(dieIndex, finalValue);
       if (boxEl) boxEl.classList.remove('dice-rolling');
+      saveDiceState();
       window.setTimeout(() => stopNext(idx + 1), 160);
     };
 
@@ -159,7 +227,17 @@ function initDiceRoller() {
     najavaRowId = null;
     setSubmitPreviewActive(false);
     updateNajavaIndicator();
+    saveDiceState();
   };
+
+  dieLabels.forEach((label) => {
+    const checkbox = label.querySelector('input[type="checkbox"]');
+    if (checkbox) {
+      checkbox.addEventListener('change', () => {
+        saveDiceState();
+      });
+    }
+  });
 
   if (submitBtn) {
     submitBtn.addEventListener('click', () => {
@@ -178,6 +256,7 @@ function initDiceRoller() {
   });
   updateRollStatus();
   updateSubmitButton();
+  saveDiceState();
   rollBtn.addEventListener('click', rollDice);
 }
 
@@ -538,6 +617,10 @@ function updateState(tableId, colIndex, rowId, val) {
   updatePeerGhost(tableId, colIndex, rowId, val);
   saveScores();
 
+  if (val !== null && submitPreviewActive) {
+    setSubmitPreviewActive(false);
+  }
+
   if (val !== null && typeof window.resetRollState === 'function') {
     window.resetRollState();
   }
@@ -763,6 +846,7 @@ function loadScores() {
 function resetGame() {
   if (confirm('Clear ALL scores?')) {
     localStorage.removeItem('dual_jamb_scores_v10');
+    clearDiceState();
     allScores = { t1: {}, t2: {} };
     document.querySelectorAll('input').forEach((i) => {
       i.value = '';
