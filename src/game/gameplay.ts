@@ -6,6 +6,7 @@ import { clearDiceState, loadScores, saveScores } from './storage';
 import { renderTableContainer } from './tableRender';
 import { initDiceRoller } from './diceRoller';
 import { initSubmitPreviewToggle } from './submitPreview';
+import { initFontSizeToggle } from './fontSizeToggle';
 import { state } from './state';
 import { initUndo, isUndoInProgress, registerUndoWrite } from './undo';
 
@@ -20,6 +21,7 @@ export function init() {
   loadScores();
   initDiceRoller();
   initSubmitPreviewToggle();
+  initFontSizeToggle();
   initUndo(updateState);
 }
 

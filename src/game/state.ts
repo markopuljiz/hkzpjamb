@@ -9,6 +9,7 @@ export const state: {
   diceValues: DiceValues;
   rollsLeft: number;
   submitPreviewActive: boolean;
+  fontSizeMode: 'small' | 'normal' | 'large';
   najavaButton: HTMLButtonElement | null;
   isRolling: boolean;
   najavaActive: boolean;
@@ -18,6 +19,7 @@ export const state: {
   diceValues: [null, null, null, null, null],
   rollsLeft: 3,
   submitPreviewActive: false,
+  fontSizeMode: 'normal',
   najavaButton: null,
   isRolling: false,
   najavaActive: false,
