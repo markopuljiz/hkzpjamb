@@ -9,72 +9,91 @@ declare global {
   }
 }
 
+let rollButton: HTMLButtonElement | null = null;
+let rollStatusElement: HTMLElement | null = null;
+let najavaButton: HTMLButtonElement | null = null;
+
+const diceIcons = [
+  'fa-dice-one',
+  'fa-dice-two',
+  'fa-dice-three',
+  'fa-dice-four',
+  'fa-dice-five',
+  'fa-dice-six'
+];
+
+function updateRollStatus() {
+  if (rollStatusElement) rollStatusElement.innerText = `${3 - state.rollsLeft}/3`;
+  if (!rollButton) return;
+  rollButton.disabled = state.rollsLeft <= 0;
+  rollButton.classList.toggle('opacity-50', state.rollsLeft <= 0);
+  rollButton.classList.toggle('cursor-not-allowed', state.rollsLeft <= 0);
+  const canNajava = state.rollsLeft === 2 && !state.isRolling && !state.najavaActive;
+
+  if (state.najavaButton) {
+    const lockedByNajava = state.najavaActive;
+    state.najavaButton.disabled = lockedByNajava || !canNajava;
+    state.najavaButton.classList.toggle('opacity-50', !canNajava && !lockedByNajava);
+    state.najavaButton.classList.toggle('cursor-not-allowed', lockedByNajava || !canNajava);
+  }
+}
+
+function setDieFace(dieIndex: number, value: number) {
+  const label = document.querySelector(`[data-die="${dieIndex}"]`);
+  if (!label) return;
+  const faceEl = label.querySelector('[data-die-face]');
+  if (!faceEl) return;
+
+  faceEl.classList.remove(...diceIcons);
+  faceEl.classList.remove('fa-dice');
+  faceEl.classList.remove('text-4xl');
+  faceEl.classList.remove('dice-empty');
+
+  faceEl.classList.add('fas');
+  faceEl.classList.add(diceIcons[value - 1]);
+  faceEl.classList.add('text-5xl');
+}
+
+function setDieEmpty(dieIndex: number) {
+  const label = document.querySelector(`[data-die="${dieIndex}"]`);
+  if (!label) return;
+  const faceEl = label.querySelector('[data-die-face]');
+  if (!faceEl) return;
+  faceEl.classList.remove(...diceIcons, 'text-5xl');
+
+  faceEl.classList.add('fas', 'fa-dice', 'text-4xl', 'dice-empty');
+  faceEl.classList.remove('dice-rolling');
+}
+
+export function applyDiceSnapshot(snapshot: { diceValues: Array<number | null>; rollsLeft: number; locked: boolean[] }) {
+  state.rollsLeft = snapshot.rollsLeft;
+  state.diceValues = [...snapshot.diceValues];
+
+  document.querySelectorAll('[data-die]').forEach((label) => {
+    const dieIndex = parseInt((label as HTMLElement).dataset.die || '', 10);
+    const checkbox = label.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
+    if (checkbox && !Number.isNaN(dieIndex) && dieIndex >= 0 && dieIndex < 5) {
+      checkbox.checked = !!snapshot.locked[dieIndex];
+    }
+  });
+
+  state.diceValues.forEach((value, index) => {
+    if (value === null) setDieEmpty(index);
+    else setDieFace(index, value);
+  });
+
+  updateRollStatus();
+  saveDiceState();
+}
+
 export function initDiceRoller() {
-  const rollBtn = document.getElementById('roll-dice-btn') as HTMLButtonElement | null;
-  const rollStatusEl = document.getElementById('roll-status');
-  const najavaBtn = document.getElementById('najava-btn') as HTMLButtonElement | null;
+  rollButton = document.getElementById('roll-dice-btn') as HTMLButtonElement | null;
+  rollStatusElement = document.getElementById('roll-status');
+  najavaButton = document.getElementById('najava-btn') as HTMLButtonElement | null;
   const dieLabels = document.querySelectorAll('[data-die]');
 
-  if (!rollBtn || dieLabels.length === 0) return;
-  state.najavaButton = najavaBtn;
-
-  const updateRollStatus = () => {
-    if (rollStatusEl) rollStatusEl.innerText = `${3 - state.rollsLeft}/3`;
-    rollBtn.disabled = state.rollsLeft <= 0;
-    rollBtn.classList.toggle('opacity-50', state.rollsLeft <= 0);
-    rollBtn.classList.toggle('cursor-not-allowed', state.rollsLeft <= 0);
-    const canNajava = state.rollsLeft === 2 && !state.isRolling && !state.najavaActive;
-
-    if (state.najavaButton) {
-      const lockedByNajava = state.najavaActive;
-      state.najavaButton.disabled = lockedByNajava || !canNajava;
-      state.najavaButton.classList.toggle('opacity-50', !canNajava && !lockedByNajava);
-      state.najavaButton.classList.toggle('cursor-not-allowed', lockedByNajava || !canNajava);
-    }
-  };
-
-  const setDieFace = (dieIndex: number, value: number) => {
-    const label = document.querySelector(`[data-die="${dieIndex}"]`);
-    if (!label) return;
-    const faceEl = label.querySelector('[data-die-face]');
-    if (!faceEl) return;
-    const diceIcons = [
-      'fa-dice-one',
-      'fa-dice-two',
-      'fa-dice-three',
-      'fa-dice-four',
-      'fa-dice-five',
-      'fa-dice-six'
-    ];
-
-    faceEl.classList.remove(...diceIcons);
-    faceEl.classList.remove('fa-dice');
-    faceEl.classList.remove('text-4xl');
-    faceEl.classList.remove('dice-empty');
-
-    faceEl.classList.add('fas');
-    faceEl.classList.add(diceIcons[value - 1]);
-    faceEl.classList.add('text-5xl');
-  };
-
-  const setDieEmpty = (dieIndex: number) => {
-    const label = document.querySelector(`[data-die="${dieIndex}"]`);
-    if (!label) return;
-    const faceEl = label.querySelector('[data-die-face]');
-    if (!faceEl) return;
-    faceEl.classList.remove(
-      'fa-dice-one',
-      'fa-dice-two',
-      'fa-dice-three',
-      'fa-dice-four',
-      'fa-dice-five',
-      'fa-dice-six',
-      'text-5xl'
-    );
-
-    faceEl.classList.add('fas', 'fa-dice', 'text-4xl', 'dice-empty');
-    faceEl.classList.remove('dice-rolling');
-  };
+  if (!rollButton || dieLabels.length === 0) return;
+  state.najavaButton = najavaButton;
 
   const restored = loadDiceState();
   if (restored) {
@@ -177,8 +196,8 @@ export function initDiceRoller() {
     }
   });
 
-  if (najavaBtn) {
-    najavaBtn.addEventListener('click', openNajavaModal);
+  if (najavaButton) {
+    najavaButton.addEventListener('click', openNajavaModal);
   }
 
   state.diceValues.forEach((value, index) => {
@@ -189,5 +208,5 @@ export function initDiceRoller() {
   setSubmitPreviewActive(state.rollsLeft < 3);
   updateRollStatus();
   saveDiceState();
-  rollBtn.addEventListener('click', rollDice);
+  rollButton.addEventListener('click', rollDice);
 }

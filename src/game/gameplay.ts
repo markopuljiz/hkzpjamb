@@ -5,7 +5,9 @@ import { calculateColumn, getPreviewScore, isRowAllowed } from './scoring';
 import { clearDiceState, loadScores, saveScores } from './storage';
 import { renderTableContainer } from './tableRender';
 import { initDiceRoller } from './diceRoller';
+import { initSubmitPreviewToggle } from './submitPreview';
 import { state } from './state';
+import { initUndo, isUndoInProgress, registerUndoWrite } from './undo';
 
 declare global {
   interface Window {
@@ -17,12 +19,19 @@ export function init() {
   tables.forEach((t) => renderTableContainer(t));
   loadScores();
   initDiceRoller();
+  initSubmitPreviewToggle();
+  initUndo(updateState);
 }
 
 export function updateState(tableId: string, colIndex: number, rowId: string, val: number | null) {
   if (!state.allScores[tableId]) state.allScores[tableId] = {};
   const colKey = String(colIndex);
   if (!state.allScores[tableId][colKey]) state.allScores[tableId][colKey] = {};
+
+  const prevValue = state.allScores[tableId][colKey][rowId] ?? null;
+  if (!isUndoInProgress() && prevValue !== val) {
+    registerUndoWrite(tableId, colIndex, rowId, prevValue);
+  }
 
   state.allScores[tableId][colKey][rowId] = val;
 

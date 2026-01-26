@@ -1,6 +1,7 @@
 import { columns, rows, tables } from './config';
 import { state } from './state';
 import { setSubmitPreviewActive } from './submitPreview';
+import { registerUndoNajava } from './undo';
 
 export function openNajavaModal() {
   if (state.rollsLeft === 3 || state.najavaActive) return;
@@ -39,6 +40,7 @@ export function closeNajavaModal() {
 }
 
 export function selectNajava(rowId: string) {
+  registerUndoNajava(rowId);
   state.najavaActive = true;
   state.najavaRowId = rowId;
   closeNajavaModal();
