@@ -54,13 +54,13 @@
           <div class="flex flex-wrap items-center gap-2">
             <button
               id="roll-dice-btn"
-              class="px-3 py-1.5 text-xs font-semibold rounded-md bg-slate-800 text-white hover:bg-slate-700 transition-colors"
+              class="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition-colors"
             >
               Roll
             </button>
             <button
               id="najava-btn"
-              class="px-3 py-1.5 text-xs font-semibold rounded-md bg-amber-100 text-amber-800 border border-amber-200 hover:bg-amber-200 transition-colors"
+              class="px-4 py-2 text-sm font-semibold rounded-lg bg-amber-100 text-amber-800 border border-amber-200 hover:bg-amber-200 transition-colors"
             >
               Najava
             </button>
@@ -68,11 +68,10 @@
               id="submit-roll-btn"
               type="button"
               aria-pressed="false"
-              class="px-3 py-1.5 text-xs font-semibold rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200 hover:bg-emerald-200 transition-colors"
+              class="px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-200 hover:bg-emerald-200 transition-colors"
             >
               Submit
             </button>
-            <span class="text-[11px] text-slate-500">Rolls left: <span id="rolls-left" class="font-bold">3</span></span>
             <span class="text-[11px] text-slate-500">Roll: <span id="roll-status" class="font-bold">0/3</span></span>
           </div>
         </div>
@@ -81,46 +80,46 @@
           <label class="cursor-pointer" data-die="0">
             <input type="checkbox" class="peer sr-only" />
             <div
-              class="h-14 w-14 rounded-lg border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
+              class="h-16 w-16 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1.5 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
             >
-              <i class="fas fa-dice-one text-2xl" data-die-face></i>
-              <i class="fas fa-lock text-[10px] opacity-0 peer-checked:opacity-70 transition-opacity"></i>
+              <i class="fas fa-dice-one text-3xl" data-die-face></i>
+              <i class="fas fa-lock text-xs opacity-0 peer-checked:opacity-70 transition-opacity"></i>
             </div>
           </label>
           <label class="cursor-pointer" data-die="1">
             <input type="checkbox" class="peer sr-only" />
             <div
-              class="h-14 w-14 rounded-lg border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
+              class="h-16 w-16 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1.5 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
             >
-              <i class="fas fa-dice-two text-2xl" data-die-face></i>
-              <i class="fas fa-lock text-[10px] opacity-0 peer-checked:opacity-70 transition-opacity"></i>
+              <i class="fas fa-dice-two text-3xl" data-die-face></i>
+              <i class="fas fa-lock text-xs opacity-0 peer-checked:opacity-70 transition-opacity"></i>
             </div>
           </label>
           <label class="cursor-pointer" data-die="2">
             <input type="checkbox" class="peer sr-only" />
             <div
-              class="h-14 w-14 rounded-lg border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
+              class="h-16 w-16 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1.5 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
             >
-              <i class="fas fa-dice-three text-2xl" data-die-face></i>
-              <i class="fas fa-lock text-[10px] opacity-0 peer-checked:opacity-70 transition-opacity"></i>
+              <i class="fas fa-dice-three text-3xl" data-die-face></i>
+              <i class="fas fa-lock text-xs opacity-0 peer-checked:opacity-70 transition-opacity"></i>
             </div>
           </label>
           <label class="cursor-pointer" data-die="3">
             <input type="checkbox" class="peer sr-only" />
             <div
-              class="h-14 w-14 rounded-lg border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
+              class="h-16 w-16 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1.5 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
             >
-              <i class="fas fa-dice-four text-2xl" data-die-face></i>
-              <i class="fas fa-lock text-[10px] opacity-0 peer-checked:opacity-70 transition-opacity"></i>
+              <i class="fas fa-dice-four text-3xl" data-die-face></i>
+              <i class="fas fa-lock text-xs opacity-0 peer-checked:opacity-70 transition-opacity"></i>
             </div>
           </label>
           <label class="cursor-pointer" data-die="4">
             <input type="checkbox" class="peer sr-only" />
             <div
-              class="h-14 w-14 rounded-lg border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
+              class="h-16 w-16 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1.5 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
             >
-              <i class="fas fa-dice-five text-2xl" data-die-face></i>
-              <i class="fas fa-lock text-[10px] opacity-0 peer-checked:opacity-70 transition-opacity"></i>
+              <i class="fas fa-dice-five text-3xl" data-die-face></i>
+              <i class="fas fa-lock text-xs opacity-0 peer-checked:opacity-70 transition-opacity"></i>
             </div>
           </label>
         </div>

@@ -45,32 +45,31 @@ function init() {
 
 function initDiceRoller() {
   const rollBtn = document.getElementById('roll-dice-btn');
-  const rollsLeftEl = document.getElementById('rolls-left');
   const rollStatusEl = document.getElementById('roll-status');
   const submitBtn = document.getElementById('submit-roll-btn');
   const najavaBtn = document.getElementById('najava-btn');
   const dieLabels = document.querySelectorAll('[data-die]');
 
-  if (!rollBtn || !rollsLeftEl || dieLabels.length === 0) return;
+  if (!rollBtn || dieLabels.length === 0) return;
   submitRollButton = submitBtn;
   najavaButton = najavaBtn;
 
   const updateRollStatus = () => {
-    rollsLeftEl.innerText = rollsLeft;
     if (rollStatusEl) rollStatusEl.innerText = `${3 - rollsLeft}/3`;
     rollBtn.disabled = rollsLeft <= 0;
     rollBtn.classList.toggle('opacity-50', rollsLeft <= 0);
     rollBtn.classList.toggle('cursor-not-allowed', rollsLeft <= 0);
     const canSubmit = rollsLeft < 3 && !isRolling;
+    const canNajava = rollsLeft === 2 && !isRolling && !najavaActive;
     if (submitRollButton) {
       submitRollButton.disabled = !canSubmit;
       submitRollButton.classList.toggle('opacity-50', !canSubmit);
       submitRollButton.classList.toggle('cursor-not-allowed', !canSubmit);
     }
     if (najavaButton) {
-      najavaButton.disabled = !canSubmit;
-      najavaButton.classList.toggle('opacity-50', !canSubmit);
-      najavaButton.classList.toggle('cursor-not-allowed', !canSubmit);
+      najavaButton.disabled = !canNajava;
+      najavaButton.classList.toggle('opacity-50', !canNajava);
+      najavaButton.classList.toggle('cursor-not-allowed', !canNajava);
     }
   };
 
@@ -87,7 +86,7 @@ function initDiceRoller() {
       'fa-dice-five',
       'fa-dice-six'
     ];
-    faceEl.className = `fas ${diceIcons[value - 1]} text-2xl`;
+    faceEl.className = `fas ${diceIcons[value - 1]} text-3xl`;
     faceEl.classList.remove('dice-empty');
   };
 
@@ -96,7 +95,7 @@ function initDiceRoller() {
     if (!label) return;
     const faceEl = label.querySelector('[data-die-face]');
     if (!faceEl) return;
-    faceEl.className = 'fas fa-dice text-xl dice-empty';
+    faceEl.className = 'fas fa-dice text-3xl dice-empty';
   };
 
   const rollDice = () => {
@@ -156,9 +155,9 @@ function initDiceRoller() {
       if (value === null) setDieEmpty(index);
     });
     updateRollStatus();
-    setSubmitPreviewActive(false);
     najavaActive = false;
     najavaRowId = null;
+    setSubmitPreviewActive(false);
     updateNajavaIndicator();
   };
 
