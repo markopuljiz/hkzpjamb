@@ -1,3 +1,4 @@
+import { columns, rows, tables } from './config';
 import { state } from './state';
 import { loadDiceState, saveDiceState } from './storage';
 import { openNajavaModal, updateNajavaIndicator } from './najava';
@@ -6,6 +7,7 @@ import { renderSubmitPreviews, setSubmitPreviewActive } from './submitPreview';
 declare global {
   interface Window {
     resetRollState?: () => void;
+    updateRollStatus?: () => void;
   }
 }
 
@@ -22,12 +24,50 @@ const diceIcons = [
   'fa-dice-six'
 ];
 
+function isAnnouncementPending() {
+  const announcIndex = columns.indexOf('announc');
+  if (announcIndex < 0) return false;
+  const playableRows = rows.filter((row) => !row.isSum);
+
+  let hasEmptyAnnouncement = false;
+  for (const table of tables) {
+    const announcScores = state.allScores[table.id]?.[String(announcIndex)] || {};
+    for (const row of playableRows) {
+      const cellVal = announcScores[row.id];
+      if (cellVal === undefined || cellVal === null) {
+        hasEmptyAnnouncement = true;
+        break;
+      }
+    }
+    if (hasEmptyAnnouncement) break;
+  }
+
+  if (!hasEmptyAnnouncement) return false;
+
+  for (const table of tables) {
+    for (const [colIndex, colType] of columns.entries()) {
+      if (colType === 'announc') continue;
+      const colScores = state.allScores[table.id]?.[String(colIndex)] || {};
+      for (const row of playableRows) {
+        const cellVal = colScores[row.id];
+        if (cellVal === undefined || cellVal === null) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
 function updateRollStatus() {
   if (rollStatusElement) rollStatusElement.innerText = `${3 - state.rollsLeft}/3`;
   if (!rollButton) return;
-  rollButton.disabled = state.rollsLeft <= 0;
-  rollButton.classList.toggle('opacity-50', state.rollsLeft <= 0);
-  rollButton.classList.toggle('cursor-not-allowed', state.rollsLeft <= 0);
+  const mustAnnounce = state.rollsLeft === 2 && !state.najavaActive && isAnnouncementPending();
+  const canRoll = state.rollsLeft > 0 && !mustAnnounce;
+  rollButton.disabled = !canRoll;
+  rollButton.classList.toggle('opacity-50', !canRoll);
+  rollButton.classList.toggle('cursor-not-allowed', !canRoll);
   const canNajava = state.rollsLeft === 2 && !state.isRolling && !state.najavaActive;
 
   if (state.najavaButton) {
@@ -111,6 +151,11 @@ export function initDiceRoller() {
 
   const rollDice = () => {
     if (state.rollsLeft <= 0 || state.isRolling) return;
+    if (state.rollsLeft === 2 && !state.najavaActive && isAnnouncementPending()) {
+      openNajavaModal();
+      updateRollStatus();
+      return;
+    }
     state.isRolling = true;
     updateRollStatus();
 
@@ -209,4 +254,5 @@ export function initDiceRoller() {
   updateRollStatus();
   saveDiceState();
   rollButton.addEventListener('click', rollDice);
+  window.updateRollStatus = updateRollStatus;
 }

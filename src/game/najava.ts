@@ -46,6 +46,9 @@ export function selectNajava(rowId: string) {
   closeNajavaModal();
   updateNajavaIndicator();
   setSubmitPreviewActive(true);
+  if (typeof window.updateRollStatus === 'function') {
+    window.updateRollStatus();
+  }
 }
 
 export function updateNajavaIndicator() {

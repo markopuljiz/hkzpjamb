@@ -21,7 +21,7 @@ function calculateSum2(colScores: Record<string, number | null | undefined>) {
   if (hasMax && hasMin) {
     const max = maxRaw || 0;
     const min = minRaw || 0;
-    sum2Base = (max - min) * ones;
+    sum2Base = Math.max(0, max - min) * ones;
   }
 
   const sum2Bonus = sum2Base >= 60 ? 30 : 0;
