@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+body.debug-mode {
+  background-color: #ef4444 !important;
+}
+
 .custom-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
 .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
 .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
