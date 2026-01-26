@@ -42,6 +42,91 @@
       </div>
     </header>
 
+    <!-- Dice Roller Bar -->
+    <section class="bg-white/90 border-b border-slate-200">
+      <div class="max-w-7xl mx-auto px-3 py-3 flex flex-col gap-3">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div class="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <i class="fas fa-dice text-slate-500"></i>
+            Roll 5 Dice
+            <span class="text-[11px] text-slate-400 font-medium">(lock 0–5, roll up to 3x)</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              id="roll-dice-btn"
+              class="px-3 py-1.5 text-xs font-semibold rounded-md bg-slate-800 text-white hover:bg-slate-700 transition-colors"
+            >
+              Roll
+            </button>
+            <button
+              id="najava-btn"
+              class="px-3 py-1.5 text-xs font-semibold rounded-md bg-amber-100 text-amber-800 border border-amber-200 hover:bg-amber-200 transition-colors"
+            >
+              Najava
+            </button>
+            <button
+              id="submit-roll-btn"
+              type="button"
+              aria-pressed="false"
+              class="px-3 py-1.5 text-xs font-semibold rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200 hover:bg-emerald-200 transition-colors"
+            >
+              Submit
+            </button>
+            <span class="text-[11px] text-slate-500">Rolls left: <span id="rolls-left" class="font-bold">3</span></span>
+            <span class="text-[11px] text-slate-500">Roll: <span id="roll-status" class="font-bold">0/3</span></span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label class="cursor-pointer" data-die="0">
+            <input type="checkbox" class="peer sr-only" />
+            <div
+              class="h-14 w-14 rounded-lg border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
+            >
+              <i class="fas fa-dice-one text-2xl" data-die-face></i>
+              <i class="fas fa-lock text-[10px] opacity-0 peer-checked:opacity-70 transition-opacity"></i>
+            </div>
+          </label>
+          <label class="cursor-pointer" data-die="1">
+            <input type="checkbox" class="peer sr-only" />
+            <div
+              class="h-14 w-14 rounded-lg border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
+            >
+              <i class="fas fa-dice-two text-2xl" data-die-face></i>
+              <i class="fas fa-lock text-[10px] opacity-0 peer-checked:opacity-70 transition-opacity"></i>
+            </div>
+          </label>
+          <label class="cursor-pointer" data-die="2">
+            <input type="checkbox" class="peer sr-only" />
+            <div
+              class="h-14 w-14 rounded-lg border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
+            >
+              <i class="fas fa-dice-three text-2xl" data-die-face></i>
+              <i class="fas fa-lock text-[10px] opacity-0 peer-checked:opacity-70 transition-opacity"></i>
+            </div>
+          </label>
+          <label class="cursor-pointer" data-die="3">
+            <input type="checkbox" class="peer sr-only" />
+            <div
+              class="h-14 w-14 rounded-lg border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
+            >
+              <i class="fas fa-dice-four text-2xl" data-die-face></i>
+              <i class="fas fa-lock text-[10px] opacity-0 peer-checked:opacity-70 transition-opacity"></i>
+            </div>
+          </label>
+          <label class="cursor-pointer" data-die="4">
+            <input type="checkbox" class="peer sr-only" />
+            <div
+              class="h-14 w-14 rounded-lg border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-colors"
+            >
+              <i class="fas fa-dice-five text-2xl" data-die-face></i>
+              <i class="fas fa-lock text-[10px] opacity-0 peer-checked:opacity-70 transition-opacity"></i>
+            </div>
+          </label>
+        </div>
+      </div>
+    </section>
+
     <!-- Main Content Grid -->
     <main class="flex-grow p-2 sm:p-4 max-w-[1600px] mx-auto w-full">
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 h-full">
@@ -97,64 +182,38 @@
       </div>
     </footer>
 
-    <!-- Score Input Modal -->
-    <div id="score-modal" class="fixed inset-0 z-[100] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <!-- Backdrop -->
-      <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeModal()"></div>
-
-      <!-- Modal Panel -->
+    <!-- Najava Modal -->
+    <div id="najava-modal" class="fixed inset-0 z-[100] hidden" role="dialog" aria-modal="true">
+      <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeNajavaModal()"></div>
       <div class="fixed inset-0 z-10 overflow-y-auto">
-        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-          <div
-            class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm w-full"
-          >
-            <!-- Modal Header -->
-            <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
-              <h3 class="text-base font-semibold leading-6 text-slate-900" id="modal-title">Enter Score</h3>
-              <button onclick="closeModal()" class="text-slate-400 hover:text-slate-500">
-                <i class="fas fa-times text-xl"></i>
+        <div class="flex min-h-full items-center justify-center p-4">
+          <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="bg-amber-500 text-white px-4 py-3 flex justify-between items-center">
+              <h3 class="font-bold flex items-center gap-2">
+                <i class="fas fa-bullhorn"></i> Najava - Announce Row
+              </h3>
+              <button onclick="closeNajavaModal()" class="text-white/80 hover:text-white">
+                <i class="fas fa-times text-lg"></i>
               </button>
             </div>
-
-            <!-- Modal Body -->
-            <div class="p-6 space-y-4">
-              <p id="modal-prompt" class="text-sm text-slate-500 text-center mb-4">Select value:</p>
-
-              <!-- Dynamic Content Container -->
-              <div id="modal-content" class="grid gap-3">
-                <!-- Buttons injected here by JS -->
-              </div>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="bg-slate-50 px-4 py-3 flex flex-col sm:flex-row gap-2 justify-between">
-              <button
-                type="button"
-                class="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:w-auto"
-                onclick="commitScore(0)"
-              >
-                <i class="fas fa-times mr-2 mt-0.5"></i> Cross Out (X)
-              </button>
-              <div class="flex gap-2 w-full sm:w-auto">
-                <button
-                  type="button"
-                  class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:w-auto"
-                  onclick="commitScore(null)"
-                >
-                  Reset
-                </button>
-                <button
-                  type="button"
-                  class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:w-auto"
-                  onclick="closeModal()"
-                >
-                  Cancel
-                </button>
+            <div class="p-4">
+              <p class="text-sm text-slate-600 mb-3">Select which row you want to announce:</p>
+              <div id="najava-options" class="grid grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto">
+                <!-- Options injected by JS -->
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Najava Active Indicator -->
+    <div id="najava-indicator" class="hidden fixed top-16 left-1/2 -translate-x-1/2 z-40 bg-amber-500 text-white px-4 py-2 rounded-full shadow-lg text-sm font-semibold flex items-center gap-2">
+      <i class="fas fa-bullhorn"></i>
+      <span>Najava: <span id="najava-row-label" class="font-bold"></span></span>
+      <button onclick="cancelNajava()" class="ml-2 bg-white/20 hover:bg-white/30 rounded-full w-5 h-5 flex items-center justify-center text-xs">
+        <i class="fas fa-times"></i>
+      </button>
     </div>
 
     <script type="module" src="/src/main.js"></script>

@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.custom-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+.custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+.custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { appearance: textfield; -moz-appearance: textfield; }
+
+.sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  border-right: 2px solid #e2e8f0;
+}
+
+.sticky-head {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.sticky-corner { z-index: 30; }
+
+/* Animations */
+@keyframes popIn {
+  0% { transform: scale(0); opacity: 0; }
+  80% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.badge-pop { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+@keyframes diceRoll {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(540deg) scale(1.05); }
+  50% { transform: rotate(1080deg) scale(0.95); }
+  75% { transform: rotate(1620deg) scale(1.03); }
+  100% { transform: rotate(2160deg) scale(1); }
+}
+
+.dice-rolling {
+  animation: diceRoll 1.05s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+.dice-empty {
+  opacity: 0.25;
+}
+
+.row-bonus-active {
+  background-color: #fffbeb !important;
+  color: #92400e !important;
+  border-right: 4px solid #f59e0b;
+}
+
+/* Crossed Out Style */
+.crossed-out {
+  background-image:
+    linear-gradient(to top right, transparent calc(50% - 1px), #fca5a5 calc(50% - 1px), #fca5a5 calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(to bottom right, transparent calc(50% - 1px), #fca5a5 calc(50% - 1px), #fca5a5 calc(50% + 1px), transparent calc(50% + 1px));
+  background-color: #fef2f2; /* red-50 */
+  color: #ef4444; /* red-500 */
+}
+
+/* Modal Animation */
+.modal-enter { opacity: 0; transform: scale(0.95); }
+.modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 200ms, transform 200ms; }

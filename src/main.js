@@ -1,4 +1,4 @@
-import './style.css';
+import './index.css';
 
 // --- Configuration ---
 const tables = [
@@ -6,7 +6,7 @@ const tables = [
   { id: 't2', color: 'emerald', headerColor: 'bg-emerald-600', subHeader: 'bg-emerald-50' }
 ];
 
-const columns = ['down', 'free', 'up', 'announc'];
+const columns = ['down', 'up', 'free', 'announc'];
 const rows = [
   { id: '1', label: '1', icon: 'fas fa-dice-one', type: 'count' },
   { id: '2', label: '2', icon: 'fas fa-dice-two', type: 'count' },
@@ -27,12 +27,380 @@ const rows = [
 
 // --- State ---
 let allScores = { t1: {}, t2: {} };
-let activeCell = null;
+let diceValues = [null, null, null, null, null];
+let rollsLeft = 3;
+let submitPreviewActive = false;
+let submitRollButton = null;
+let najavaButton = null;
+let isRolling = false;
+let najavaActive = false;
+let najavaRowId = null;
 
 // --- Init ---
 function init() {
   tables.forEach((t) => renderTableContainer(t));
   loadScores();
+  initDiceRoller();
+}
+
+function initDiceRoller() {
+  const rollBtn = document.getElementById('roll-dice-btn');
+  const rollsLeftEl = document.getElementById('rolls-left');
+  const rollStatusEl = document.getElementById('roll-status');
+  const submitBtn = document.getElementById('submit-roll-btn');
+  const najavaBtn = document.getElementById('najava-btn');
+  const dieLabels = document.querySelectorAll('[data-die]');
+
+  if (!rollBtn || !rollsLeftEl || dieLabels.length === 0) return;
+  submitRollButton = submitBtn;
+  najavaButton = najavaBtn;
+
+  const updateRollStatus = () => {
+    rollsLeftEl.innerText = rollsLeft;
+    if (rollStatusEl) rollStatusEl.innerText = `${3 - rollsLeft}/3`;
+    rollBtn.disabled = rollsLeft <= 0;
+    rollBtn.classList.toggle('opacity-50', rollsLeft <= 0);
+    rollBtn.classList.toggle('cursor-not-allowed', rollsLeft <= 0);
+    const canSubmit = rollsLeft < 3 && !isRolling;
+    if (submitRollButton) {
+      submitRollButton.disabled = !canSubmit;
+      submitRollButton.classList.toggle('opacity-50', !canSubmit);
+      submitRollButton.classList.toggle('cursor-not-allowed', !canSubmit);
+    }
+    if (najavaButton) {
+      najavaButton.disabled = !canSubmit;
+      najavaButton.classList.toggle('opacity-50', !canSubmit);
+      najavaButton.classList.toggle('cursor-not-allowed', !canSubmit);
+    }
+  };
+
+  const setDieFace = (dieIndex, value) => {
+    const label = document.querySelector(`[data-die="${dieIndex}"]`);
+    if (!label) return;
+    const faceEl = label.querySelector('[data-die-face]');
+    if (!faceEl) return;
+    const diceIcons = [
+      'fa-dice-one',
+      'fa-dice-two',
+      'fa-dice-three',
+      'fa-dice-four',
+      'fa-dice-five',
+      'fa-dice-six'
+    ];
+    faceEl.className = `fas ${diceIcons[value - 1]} text-2xl`;
+    faceEl.classList.remove('dice-empty');
+  };
+
+  const setDieEmpty = (dieIndex) => {
+    const label = document.querySelector(`[data-die="${dieIndex}"]`);
+    if (!label) return;
+    const faceEl = label.querySelector('[data-die-face]');
+    if (!faceEl) return;
+    faceEl.className = 'fas fa-dice text-xl dice-empty';
+  };
+
+  const rollDice = () => {
+    if (rollsLeft <= 0 || isRolling) return;
+    isRolling = true;
+    updateRollStatus();
+
+    const rollingIntervals = [];
+    const unlockedLabels = [];
+
+    dieLabels.forEach((label) => {
+      const dieIndex = parseInt(label.dataset.die, 10);
+      const checkbox = label.querySelector('input[type="checkbox"]');
+      const isLocked = checkbox?.checked;
+      const faceEl = label.querySelector('[data-die-face]');
+      const boxEl = label.querySelector('div');
+      if (isLocked) return;
+      unlockedLabels.push({ label, dieIndex, faceEl, boxEl });
+      if (boxEl) boxEl.classList.add('dice-rolling');
+      const intervalId = window.setInterval(() => {
+        const value = Math.floor(Math.random() * 6) + 1;
+        setDieFace(dieIndex, value);
+      }, 90);
+      rollingIntervals.push({ dieIndex, intervalId, boxEl });
+    });
+
+    const stopNext = (idx) => {
+      const target = unlockedLabels[idx];
+      if (!target) {
+        rollsLeft -= 1;
+        isRolling = false;
+        updateRollStatus();
+        if (submitPreviewActive) renderSubmitPreviews();
+        return;
+      }
+      const { dieIndex, faceEl, boxEl } = target;
+      const interval = rollingIntervals.find((entry) => entry.dieIndex === dieIndex);
+      if (interval) window.clearInterval(interval.intervalId);
+      const finalValue = Math.floor(Math.random() * 6) + 1;
+      diceValues[dieIndex] = finalValue;
+      setDieFace(dieIndex, finalValue);
+      if (boxEl) boxEl.classList.remove('dice-rolling');
+      window.setTimeout(() => stopNext(idx + 1), 160);
+    };
+
+    window.setTimeout(() => stopNext(0), 600);
+  };
+
+  window.resetRollState = () => {
+    rollsLeft = 3;
+    diceValues = [null, null, null, null, null];
+    dieLabels.forEach((label) => {
+      const checkbox = label.querySelector('input[type="checkbox"]');
+      if (checkbox) checkbox.checked = false;
+    });
+    diceValues.forEach((value, index) => {
+      if (value === null) setDieEmpty(index);
+    });
+    updateRollStatus();
+    setSubmitPreviewActive(false);
+    najavaActive = false;
+    najavaRowId = null;
+    updateNajavaIndicator();
+  };
+
+  if (submitBtn) {
+    submitBtn.addEventListener('click', () => {
+      if (najavaActive && submitPreviewActive) return;
+      setSubmitPreviewActive(!submitPreviewActive);
+    });
+  }
+
+  if (najavaBtn) {
+    najavaBtn.addEventListener('click', openNajavaModal);
+  }
+
+  diceValues.forEach((value, index) => {
+    if (value === null) setDieEmpty(index);
+    else setDieFace(index, value);
+  });
+  updateRollStatus();
+  updateSubmitButton();
+  rollBtn.addEventListener('click', rollDice);
+}
+
+function updateSubmitButton() {
+  if (!submitRollButton) return;
+  submitRollButton.setAttribute('aria-pressed', submitPreviewActive ? 'true' : 'false');
+  submitRollButton.classList.toggle('bg-emerald-600', submitPreviewActive);
+  submitRollButton.classList.toggle('text-white', submitPreviewActive);
+  submitRollButton.classList.toggle('border-emerald-600', submitPreviewActive);
+  submitRollButton.classList.toggle('bg-emerald-100', !submitPreviewActive);
+  submitRollButton.classList.toggle('text-emerald-800', !submitPreviewActive);
+  submitRollButton.classList.toggle('border-emerald-200', !submitPreviewActive);
+}
+
+function setSubmitPreviewActive(nextState) {
+  if (nextState && rollsLeft === 3) return;
+  if (!nextState && najavaActive) return;
+  submitPreviewActive = nextState;
+  updateSubmitButton();
+  if (submitPreviewActive) {
+    renderSubmitPreviews();
+  } else {
+    clearSubmitPreviews();
+  }
+}
+
+function clearSubmitPreviews() {
+  tables.forEach((table) => {
+    columns.forEach((_, colIndex) => {
+      rows.forEach((row) => {
+        if (row.isSum) return;
+        const previewEl = document.getElementById(`preview_${table.id}_c${colIndex}_${row.id}`);
+        if (!previewEl) return;
+        previewEl.innerText = '';
+        previewEl.classList.add('opacity-0');
+        previewEl.classList.remove('opacity-100');
+      });
+    });
+  });
+}
+
+function renderSubmitPreviews() {
+  const diceCounts = Array(7).fill(0);
+  let diceSum = 0;
+  diceValues.forEach((val) => {
+    if (val === null) return;
+    diceCounts[val] += 1;
+    diceSum += val;
+  });
+
+  tables.forEach((table) => {
+    columns.forEach((_, colIndex) => {
+      rows.forEach((row) => {
+        if (row.isSum) return;
+        const inputEl = document.getElementById(`${table.id}_c${colIndex}_${row.id}`);
+        const previewEl = document.getElementById(`preview_${table.id}_c${colIndex}_${row.id}`);
+        if (!previewEl) return;
+        const isEmpty = inputEl && inputEl.value === '';
+        const isAllowed = isRowAllowed(table.id, colIndex, row.id);
+        if (!submitPreviewActive || !isEmpty) {
+          previewEl.innerText = '';
+          previewEl.classList.add('opacity-0');
+          previewEl.classList.remove('opacity-100');
+          return;
+        }
+        if (!isAllowed) {
+          previewEl.innerText = '';
+          previewEl.classList.add('opacity-0');
+          previewEl.classList.remove('opacity-100');
+          return;
+        }
+        const previewVal = getPreviewScore(row, diceCounts, diceSum);
+        previewEl.innerText = previewVal;
+        previewEl.classList.add('opacity-100');
+        previewEl.classList.remove('opacity-0');
+      });
+    });
+  });
+}
+
+function getAllowedRowId(tableId, colIndex) {
+  const columnType = columns[colIndex];
+  if (columnType !== 'down' && columnType !== 'up') return null;
+  const colScores = allScores[tableId]?.[colIndex] || {};
+  const playableRows = rows.filter((row) => !row.isSum).map((row) => row.id);
+  const emptyRows = playableRows.filter(
+    (rowId) => colScores[rowId] === undefined || colScores[rowId] === null
+  );
+  if (emptyRows.length === 0) return null;
+  return columnType === 'down' ? emptyRows[0] : emptyRows[emptyRows.length - 1];
+}
+
+function isRowAllowed(tableId, colIndex, rowId) {
+  const columnType = columns[colIndex];
+  if (najavaActive) {
+    return columnType === 'announc' && najavaRowId === rowId;
+  }
+  if (columnType === 'announc') {
+    return false;
+  }
+  if (columnType === 'down' || columnType === 'up') {
+    return getAllowedRowId(tableId, colIndex) === rowId;
+  }
+  return true;
+}
+
+function openNajavaModal() {
+  if (rollsLeft === 3 || najavaActive) return;
+  const modal = document.getElementById('najava-modal');
+  const optionsContainer = document.getElementById('najava-options');
+  if (!modal || !optionsContainer) return;
+
+  optionsContainer.innerHTML = '';
+  const playableRows = rows.filter((row) => !row.isSum);
+
+  playableRows.forEach((row) => {
+    const hasEmptyCell = tables.some((table) => {
+      const colIndex = columns.indexOf('announc');
+      const cellVal = allScores[table.id]?.[colIndex]?.[row.id];
+      return cellVal === undefined || cellVal === null;
+    });
+    if (!hasEmptyCell) return;
+
+    const btn = document.createElement('button');
+    btn.className = 'flex items-center gap-2 p-3 rounded-lg border border-slate-200 hover:border-amber-400 hover:bg-amber-50 transition-colors text-left';
+    btn.innerHTML = `
+      ${row.icon ? `<i class="${row.icon} text-slate-500"></i>` : '<i class="fas fa-circle text-slate-300 text-xs"></i>'}
+      <span class="font-medium text-slate-700">${row.label}</span>
+    `;
+    btn.onclick = () => selectNajava(row.id);
+    optionsContainer.appendChild(btn);
+  });
+
+  modal.classList.remove('hidden');
+}
+
+function closeNajavaModal() {
+  const modal = document.getElementById('najava-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function selectNajava(rowId) {
+  najavaActive = true;
+  najavaRowId = rowId;
+  closeNajavaModal();
+  updateNajavaIndicator();
+  setSubmitPreviewActive(true);
+}
+
+function cancelNajava() {
+  najavaActive = false;
+  najavaRowId = null;
+  updateNajavaIndicator();
+  if (submitPreviewActive) renderSubmitPreviews();
+}
+
+function updateNajavaIndicator() {
+  const indicator = document.getElementById('najava-indicator');
+  const label = document.getElementById('najava-row-label');
+  if (!indicator) return;
+
+  const row = najavaRowId ? rows.find((r) => r.id === najavaRowId) : null;
+  const rowLabel = row?.label || '';
+  if (label) label.textContent = rowLabel || '-';
+
+  document.querySelectorAll('[data-ann-label]').forEach((el) => {
+    el.textContent = rowLabel ? `(${rowLabel})` : '';
+  });
+
+  if (najavaActive && najavaRowId) {
+    indicator.classList.remove('hidden');
+  } else {
+    indicator.classList.add('hidden');
+  }
+}
+
+function getPreviewScore(row, diceCounts, diceSum) {
+  if (row.type === 'count') {
+    const dieVal = parseInt(row.id, 10);
+    return (diceCounts[dieVal] || 0) * dieVal;
+  }
+
+  if (row.type === 'manual') {
+    return diceSum;
+  }
+
+  if (row.type === 'straight') {
+    const smallStraight = [1, 2, 3, 4, 5].every((val) => diceCounts[val] > 0);
+    const largeStraight = [2, 3, 4, 5, 6].every((val) => diceCounts[val] > 0);
+    if (largeStraight) return 66;
+    if (smallStraight) return 56;
+    return 0;
+  }
+
+  if (row.type === 'full') {
+    let tripleVal = null;
+    let pairVal = null;
+    for (let val = 6; val >= 1; val -= 1) {
+      if (diceCounts[val] >= 3 && tripleVal === null) tripleVal = val;
+    }
+    for (let val = 6; val >= 1; val -= 1) {
+      if (val !== tripleVal && diceCounts[val] >= 2 && pairVal === null) pairVal = val;
+    }
+    if (tripleVal && pairVal) return tripleVal * 3 + pairVal * 2 + 30;
+    return 0;
+  }
+
+  if (row.type === 'poker') {
+    for (let val = 6; val >= 1; val -= 1) {
+      if (diceCounts[val] >= 4) return val * 4 + 40;
+    }
+    return 0;
+  }
+
+  if (row.type === 'yamb') {
+    for (let val = 6; val >= 1; val -= 1) {
+      if (diceCounts[val] === 5) return val * 5 + 70;
+    }
+    return 0;
+  }
+
+  return 0;
 }
 
 // --- Rendering ---
@@ -61,9 +429,13 @@ function renderTableContainer(tableConfig) {
             <tr>
                 <th class="p-2 w-14 sticky-col ${tableConfig.headerColor} sticky-corner border-b border-white/20"></th>
                 <th class="p-2 w-1/4 border-l border-white/20"><i class="fas fa-arrow-down block text-xs opacity-75"></i><span class="text-xs uppercase">Down</span></th>
-                <th class="p-2 w-1/4 border-l border-white/20"><i class="fas fa-arrows-left-right block text-xs opacity-75"></i><span class="text-xs uppercase">Free</span></th>
                 <th class="p-2 w-1/4 border-l border-white/20"><i class="fas fa-arrow-up block text-xs opacity-75"></i><span class="text-xs uppercase">Up</span></th>
-                <th class="p-2 w-1/4 border-l border-white/20"><i class="fas fa-bullhorn block text-xs opacity-75"></i><span class="text-xs uppercase">Ann.</span></th>
+                <th class="p-2 w-1/4 border-l border-white/20"><i class="fas fa-arrows-left-right block text-xs opacity-75"></i><span class="text-xs uppercase">Free</span></th>
+                <th class="p-2 w-1/4 border-l border-white/20">
+                  <i class="fas fa-bullhorn block text-xs opacity-75"></i>
+                  <span class="text-xs uppercase">Ann.</span>
+                  <span data-ann-label class="block text-[10px] font-semibold text-white/80"></span>
+                </th>
             </tr>
         </thead>
         <tbody class="text-sm">
@@ -100,21 +472,14 @@ function renderTableContainer(tableConfig) {
       } else {
         // Ghost
         html += `<span id="${ghostId}" class="absolute top-0.5 right-1 text-[9px] text-slate-300 italic pointer-events-none z-0"></span>`;
+        html += `<span id="preview_${tableConfig.id}_c${cIndex}_${row.id}" class="absolute bottom-0.5 left-1 text-[10px] text-emerald-600 font-semibold opacity-0 transition-opacity pointer-events-none z-0"></span>`;
 
         const inputClasses = `w-full h-full text-center bg-transparent relative z-10 focus:bg-${baseColor}-100 focus:outline-none font-medium text-slate-800 cursor-pointer selection:bg-transparent`;
 
-        if (row.type === 'manual') {
-          html += `<input type="number" id="${cellId}" 
-                class="${inputClasses}"
-                placeholder="-" 
-                oninput="handleInput('${tableConfig.id}', ${cIndex}, '${row.id}', this.value)"
-                onfocus="this.select()">`;
-        } else {
-          html += `<input type="text" id="${cellId}" readonly
+        html += `<input type="text" id="${cellId}" readonly
                 class="${inputClasses}" 
                 placeholder="-" 
-                onclick="openModal('${tableConfig.id}', ${cIndex}, '${row.id}')">`;
-        }
+                onclick="applyAutoScore('${tableConfig.id}', ${cIndex}, '${row.id}')">`;
       }
       html += `</td>`;
     });
@@ -170,157 +535,30 @@ function updateState(tableId, colIndex, rowId, val) {
   calculateColumn(tableId, colIndex);
   updatePeerGhost(tableId, colIndex, rowId, val);
   saveScores();
-}
 
-// --- Modal Logic ---
-
-function openModal(tableId, colIndex, rowId) {
-  const rowConfig = rows.find((r) => r.id === rowId);
-  if (!rowConfig) return;
-
-  activeCell = { tableId, colIndex, rowId };
-
-  const promptEl = document.getElementById('modal-prompt');
-  promptEl.innerText = `Enter score for ${rowConfig.label}`;
-
-  const contentEl = document.getElementById('modal-content');
-  contentEl.innerHTML = '';
-
-  const modal = document.getElementById('score-modal');
-  modal.classList.remove('hidden');
-
-  if (rowConfig.type === 'count') {
-    const diceVal = parseInt(rowId, 10);
-    promptEl.innerText = `How many ${rowConfig.label}s?`;
-    renderCountButtons(diceVal);
-  } else if (rowConfig.type === 'straight') {
-    renderStraightButtons();
-  } else if (rowConfig.type === 'full') {
-    renderFullHouseWizard();
-  } else if (rowConfig.type === 'poker') {
-    renderPokerButtons();
-  } else if (rowConfig.type === 'yamb') {
-    renderYambButtons();
+  if (val !== null && typeof window.resetRollState === 'function') {
+    window.resetRollState();
   }
 }
 
-function closeModal() {
-  document.getElementById('score-modal').classList.add('hidden');
-  activeCell = null;
-}
+function applyAutoScore(tableId, colIndex, rowId) {
+  const rowConfig = rows.find((row) => row.id === rowId);
+  if (!rowConfig || rowConfig.isSum) return;
+  const inputEl = document.getElementById(`${tableId}_c${colIndex}_${rowId}`);
+  if (!inputEl || inputEl.value !== '') return;
+  if (!submitPreviewActive && !najavaActive) return;
+  if (!isRowAllowed(tableId, colIndex, rowId)) return;
 
-function commitScore(val) {
-  if (activeCell) {
-    updateState(activeCell.tableId, activeCell.colIndex, activeCell.rowId, val);
-  }
-  closeModal();
-}
-
-// --- Modal Renderers ---
-
-function renderCountButtons(multiplier) {
-  const container = document.getElementById('modal-content');
-  container.className = 'grid grid-cols-3 gap-3';
-
-  for (let i = 1; i <= 5; i += 1) {
-    const val = i * multiplier;
-    const btn = document.createElement('button');
-    btn.className =
-      'p-4 bg-slate-100 hover:bg-blue-100 border border-slate-300 rounded-lg text-lg font-bold transition-colors';
-    btn.innerHTML = `<div class="text-xs text-slate-500 font-normal">Count: ${i}</div><div class="text-blue-600">${val}</div>`;
-    btn.onclick = () => commitScore(val);
-    container.appendChild(btn);
-  }
-}
-
-function renderStraightButtons() {
-  const container = document.getElementById('modal-content');
-  container.className = 'grid grid-cols-2 gap-4';
-
-  const opts = [
-    { label: 'Small', val: 56 },
-    { label: 'Big', val: 66 }
-  ];
-
-  opts.forEach((opt) => {
-    const btn = document.createElement('button');
-    btn.className =
-      'p-6 bg-slate-100 hover:bg-green-100 border border-slate-300 rounded-xl text-xl font-bold transition-colors flex flex-col items-center gap-1';
-    btn.innerHTML = `<span>${opt.label}</span><span class="text-2xl text-green-600">${opt.val}</span>`;
-    btn.onclick = () => commitScore(opt.val);
-    container.appendChild(btn);
+  const diceCounts = Array(7).fill(0);
+  let diceSum = 0;
+  diceValues.forEach((val) => {
+    if (val === null) return;
+    diceCounts[val] += 1;
+    diceSum += val;
   });
-}
 
-function renderFullHouseWizard() {
-  const container = document.getElementById('modal-content');
-  const prompt = document.getElementById('modal-prompt');
-  prompt.innerText = 'Full House: Select Triple (3x)';
-  renderDiceGrid(container, (tripleVal) => {
-    prompt.innerText = 'Full House: Select Double (2x)';
-    renderDiceGrid(
-      container,
-      (doubleVal) => {
-        const score = tripleVal * 3 + doubleVal * 2 + 30;
-        commitScore(score);
-      },
-      tripleVal
-    );
-  });
-}
-
-function renderPokerButtons() {
-  const container = document.getElementById('modal-content');
-  const prompt = document.getElementById('modal-prompt');
-  prompt.innerText = 'Poker (4x): Select Dice';
-  renderDiceGrid(container, (diceVal) => {
-    const score = diceVal * 4 + 40;
-    commitScore(score);
-  });
-}
-
-function renderYambButtons() {
-  const container = document.getElementById('modal-content');
-  const prompt = document.getElementById('modal-prompt');
-  prompt.innerText = 'Jamb (5x): Select Dice';
-  renderDiceGrid(container, (diceVal) => {
-    const score = diceVal * 5 + 70;
-    commitScore(score);
-  });
-}
-
-function renderDiceGrid(container, clickHandler, excludedVal = null) {
-  container.innerHTML = '';
-  container.className = 'grid grid-cols-3 gap-3';
-
-  const diceIcons = [
-    'fa-dice-one',
-    'fa-dice-two',
-    'fa-dice-three',
-    'fa-dice-four',
-    'fa-dice-five',
-    'fa-dice-six'
-  ];
-
-  for (let i = 1; i <= 6; i += 1) {
-    const btn = document.createElement('button');
-    const isDisabled = i === excludedVal;
-    btn.className = `p-3 border rounded-lg flex flex-col items-center gap-2 transition-all 
-            ${
-              isDisabled
-                ? 'opacity-25 cursor-not-allowed bg-slate-100'
-                : 'bg-white hover:bg-indigo-50 border-slate-300 shadow-sm'
-            }`;
-    btn.disabled = isDisabled;
-    btn.innerHTML = `
-            <i class="fas ${diceIcons[i - 1]} text-2xl ${isDisabled ? 'text-slate-400' : 'text-indigo-600'}"></i>
-            <span class="text-sm font-bold">${i}</span>
-        `;
-    if (!isDisabled) {
-      btn.onclick = () => clickHandler(i);
-    }
-    container.appendChild(btn);
-  }
+  const score = getPreviewScore(rowConfig, diceCounts, diceSum);
+  updateState(tableId, colIndex, rowId, score);
 }
 
 // --- Calculation & Shared ---
@@ -544,15 +782,19 @@ function resetGame() {
     document.querySelectorAll('[id^="ghost_"]').forEach((el) => {
       el.innerText = '';
     });
+    if (typeof window.resetRollState === 'function') {
+      window.resetRollState();
+    }
   }
 }
 
 Object.assign(window, {
   resetGame,
-  openModal,
-  closeModal,
-  commitScore,
-  handleInput
+  applyAutoScore,
+  openNajavaModal,
+  closeNajavaModal,
+  selectNajava,
+  cancelNajava
 });
 
 init();
