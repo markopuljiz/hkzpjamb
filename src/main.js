@@ -410,15 +410,6 @@ function renderTableContainer(tableConfig) {
 
   // Generate HTML structure
   let html = `
-        <div class="${tableConfig.subHeader} p-2 px-4 border-b border-${baseColor}-100 flex justify-between items-center">
-            <h2 class="font-bold text-${baseColor}-800 flex items-center gap-2">
-                <span class="bg-${tableConfig.color}-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">${tableConfig.id === 't1' ? 'A' : 'B'}</span>
-                Table ${tableConfig.id === 't1' ? '1' : '2'}
-            </h2>
-            <span id="${tableConfig.id}-extra-badge" class="hidden text-xs font-bold text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded border border-yellow-300">
-                Horiz. Bonus: +<span id="${tableConfig.id}-extra-val">0</span>
-            </span>
-        </div>
         <div class="flex-grow overflow-auto custom-scroll relative">
             <table class="w-full min-w-[350px] border-collapse text-center" id="table-${tableConfig.id}">
     `;
@@ -427,13 +418,16 @@ function renderTableContainer(tableConfig) {
   html += `
         <thead class="${tableConfig.headerColor} text-white sticky-head shadow-sm">
             <tr>
-                <th class="p-2 w-14 sticky-col ${tableConfig.headerColor} sticky-corner border-b border-white/20"></th>
-                <th class="p-2 w-1/4 border-l border-white/20"><i class="fas fa-arrow-down block text-xs opacity-75"></i><span class="text-xs uppercase">Down</span></th>
-                <th class="p-2 w-1/4 border-l border-white/20"><i class="fas fa-arrow-up block text-xs opacity-75"></i><span class="text-xs uppercase">Up</span></th>
-                <th class="p-2 w-1/4 border-l border-white/20"><i class="fas fa-arrows-left-right block text-xs opacity-75"></i><span class="text-xs uppercase">Free</span></th>
+                <th class="p-2 w-14 sticky-col ${tableConfig.headerColor} sticky-corner border-b border-white/20">
+                  <span class="bg-${tableConfig.color}-600 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-semibold">
+                    ${tableConfig.id === 't1' ? 'A' : 'B'}
+                  </span>
+                </th>
+                <th class="p-2 w-1/4 border-l border-white/20"><i class="fas fa-arrow-down text-base opacity-90"></i></th>
+                <th class="p-2 w-1/4 border-l border-white/20"><i class="fas fa-arrow-up text-base opacity-90"></i></th>
+                <th class="p-2 w-1/4 border-l border-white/20"><i class="fas fa-arrows-left-right text-base opacity-90"></i></th>
                 <th class="p-2 w-1/4 border-l border-white/20">
-                  <i class="fas fa-bullhorn block text-xs opacity-75"></i>
-                  <span class="text-xs uppercase">Ann.</span>
+                  <i class="fas fa-bullhorn text-base opacity-90"></i>
                   <span data-ann-label class="block text-[10px] font-semibold text-white/80"></span>
                 </th>
             </tr>
@@ -472,7 +466,7 @@ function renderTableContainer(tableConfig) {
       } else {
         // Ghost
         html += `<span id="${ghostId}" class="absolute top-0.5 right-1 text-[9px] text-slate-300 italic pointer-events-none z-0"></span>`;
-        html += `<span id="preview_${tableConfig.id}_c${cIndex}_${row.id}" class="absolute bottom-0.5 left-1 text-[10px] text-emerald-600 font-semibold opacity-0 transition-opacity pointer-events-none z-0"></span>`;
+        html += `<span id="preview_${tableConfig.id}_c${cIndex}_${row.id}" class="absolute inset-0 flex items-center justify-center text-sm font-medium italic text-slate-100 bg-emerald-300/90 opacity-0 transition-opacity pointer-events-none z-20"></span>`;
 
         const inputClasses = `w-full h-full text-center bg-transparent relative z-10 focus:bg-${baseColor}-100 focus:outline-none font-medium text-slate-800 cursor-pointer selection:bg-transparent`;
 
@@ -503,6 +497,15 @@ function renderTableContainer(tableConfig) {
   html += `</table></div>`;
 
   container.innerHTML = html;
+
+  const bonusBadge = document.getElementById(`${tableConfig.id}-extra-badge`);
+  if (!bonusBadge) {
+    const badge = document.createElement('span');
+    badge.id = `${tableConfig.id}-extra-badge`;
+    badge.className = 'hidden text-xs font-bold text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded border border-yellow-300 absolute top-2 right-4';
+    badge.innerHTML = 'Horiz. Bonus: +<span id="${tableConfig.id}-extra-val">0</span>';
+    container.appendChild(badge);
+  }
 }
 
 // --- Logic ---
