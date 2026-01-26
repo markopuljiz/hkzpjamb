@@ -7,6 +7,7 @@ import { renderTableContainer } from './tableRender';
 import { initDiceRoller } from './diceRoller';
 import { initSubmitPreviewToggle } from './submitPreview';
 import { initFontSizeToggle } from './fontSizeToggle';
+import { initDarkModeToggle } from './darkModeToggle';
 import { state } from './state';
 import { initUndo, isUndoInProgress, registerUndoWrite } from './undo';
 
@@ -22,6 +23,7 @@ export function init() {
   initDiceRoller();
   initSubmitPreviewToggle();
   initFontSizeToggle();
+  initDarkModeToggle();
   initUndo(updateState);
 }
 

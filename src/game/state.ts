@@ -10,6 +10,7 @@ export const state: {
   rollsLeft: number;
   submitPreviewActive: boolean;
   fontSizeMode: 'small' | 'normal' | 'large';
+  darkModeActive: boolean;
   najavaButton: HTMLButtonElement | null;
   isRolling: boolean;
   najavaActive: boolean;
@@ -20,6 +21,7 @@ export const state: {
   rollsLeft: 3,
   submitPreviewActive: false,
   fontSizeMode: 'normal',
+  darkModeActive: false,
   najavaButton: null,
   isRolling: false,
   najavaActive: false,
