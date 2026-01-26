@@ -41,10 +41,10 @@ input[type=number] { appearance: textfield; -moz-appearance: textfield; }
 
 @keyframes diceRoll {
   0% { transform: rotate(0deg) scale(1); }
-  25% { transform: rotate(540deg) scale(1.05); }
-  50% { transform: rotate(1080deg) scale(0.95); }
-  75% { transform: rotate(1620deg) scale(1.03); }
-  100% { transform: rotate(2160deg) scale(1); }
+  25% { transform: rotate(180deg) scale(1.05); }
+  50% { transform: rotate(360deg) scale(0.95); }
+  75% { transform: rotate(540deg) scale(1.03); }
+  100% { transform: rotate(720deg) scale(1); }
 }
 
 .dice-rolling {

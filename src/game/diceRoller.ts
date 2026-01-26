@@ -46,8 +46,15 @@ export function initDiceRoller() {
       'fa-dice-five',
       'fa-dice-six'
     ];
-    faceEl.className = `fas ${diceIcons[value - 1]} text-5xl`;
+
+    faceEl.classList.remove(...diceIcons);
+    faceEl.classList.remove('fa-dice');
+    faceEl.classList.remove('text-4xl');
     faceEl.classList.remove('dice-empty');
+
+    faceEl.classList.add('fas');
+    faceEl.classList.add(diceIcons[value - 1]);
+    faceEl.classList.add('text-5xl');
   };
 
   const setDieEmpty = (dieIndex: number) => {
@@ -55,7 +62,18 @@ export function initDiceRoller() {
     if (!label) return;
     const faceEl = label.querySelector('[data-die-face]');
     if (!faceEl) return;
-    faceEl.className = 'fas fa-dice text-5xl dice-empty';
+    faceEl.classList.remove(
+      'fa-dice-one',
+      'fa-dice-two',
+      'fa-dice-three',
+      'fa-dice-four',
+      'fa-dice-five',
+      'fa-dice-six',
+      'text-5xl'
+    );
+
+    faceEl.classList.add('fas', 'fa-dice', 'text-4xl', 'dice-empty');
+    faceEl.classList.remove('dice-rolling');
   };
 
   const restored = loadDiceState();
@@ -77,25 +95,25 @@ export function initDiceRoller() {
     state.isRolling = true;
     updateRollStatus();
 
-    const rollingIntervals: Array<{ dieIndex: number; intervalId: number; boxEl: Element | null }> = [];
-    const unlockedLabels: Array<{ dieIndex: number; boxEl: Element | null }> = [];
+    const rollingIntervals: Array<{ dieIndex: number; intervalId: number; faceEl: Element | null }> = [];
+    const unlockedLabels: Array<{ dieIndex: number; faceEl: Element | null }> = [];
 
     dieLabels.forEach((label) => {
       const dieIndex = parseInt((label as HTMLElement).dataset.die || '', 10);
       const checkbox = label.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
       const isLocked = checkbox?.checked;
-      const boxEl = label.querySelector('div');
+      const faceEl = label.querySelector('[data-die-face]');
       if (isLocked) return;
 
-      unlockedLabels.push({ dieIndex, boxEl });
-      if (boxEl) boxEl.classList.add('dice-rolling');
+      unlockedLabels.push({ dieIndex, faceEl });
+      if (faceEl) faceEl.classList.add('dice-rolling');
 
       const intervalId = window.setInterval(() => {
         const value = Math.floor(Math.random() * 6) + 1;
         setDieFace(dieIndex, value);
       }, 90);
 
-      rollingIntervals.push({ dieIndex, intervalId, boxEl });
+      rollingIntervals.push({ dieIndex, intervalId, faceEl });
     });
 
     const stopNext = (idx: number) => {
@@ -112,7 +130,7 @@ export function initDiceRoller() {
         return;
       }
 
-      const { dieIndex, boxEl } = target;
+      const { dieIndex, faceEl } = target;
       const interval = rollingIntervals.find((entry) => entry.dieIndex === dieIndex);
       if (interval) window.clearInterval(interval.intervalId);
 
@@ -120,7 +138,7 @@ export function initDiceRoller() {
       state.diceValues[dieIndex] = finalValue;
       setDieFace(dieIndex, finalValue);
 
-      if (boxEl) boxEl.classList.remove('dice-rolling');
+      if (faceEl) faceEl.classList.remove('dice-rolling');
       saveDiceState();
 
       window.setTimeout(() => stopNext(idx + 1), 160);
