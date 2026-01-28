@@ -2,6 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
+.landing {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top, rgba(148, 163, 184, 0.35), transparent 55%),
+    linear-gradient(140deg, #f8fafc, #e2e8f0 45%, #cbd5f5 100%);
+}
+
+.landing-card {
+  width: min(520px, 100%);
+  padding: 32px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+}
+
+.landing-logo {
+  max-width: 260px;
+  width: 70%;
+  height: auto;
+  filter: drop-shadow(0 12px 24px rgba(15, 23, 42, 0.18));
+}
+
+.landing-actions {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+}
+
+.landing-btn {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.landing-btn--primary {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  color: #f8fafc;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.3);
+}
+
+.landing-btn--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(15, 23, 42, 0.35);
+}
+
+.landing-btn--ghost {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5f5;
+}
+
+.landing-btn--ghost:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.landing-soon {
+  font-weight: 600;
+  color: #64748b;
+  margin-left: 6px;
+}
+
+.hidden {
+  display: none !important;
+}
+
 body.debug-mode {
   background-color: #ef4444 !important;
 }

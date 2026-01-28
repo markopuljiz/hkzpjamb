@@ -1,9 +1,6 @@
 export function initDebugMode({ updateState }) {
   const DEBUG_MODE_CLASS = 'debug-mode';
 
-  let debugDiceClicks = 0;
-  let debugDiceTimerId = null;
-
   function getScoreCellParts(cellId) {
     const match = /^(t[12])_c(\d+)_(.+)$/.exec(cellId);
     if (!match) return null;
@@ -97,26 +94,29 @@ export function initDebugMode({ updateState }) {
     setDebugMode(!enabled);
   }
 
-  const debugDiceEl = document.getElementById('debug-dice');
-  if (!debugDiceEl) return;
+  let debugTriggerClicks = 0;
+  let debugTriggerTimerId = null;
 
-  debugDiceEl.addEventListener('click', () => {
-    debugDiceClicks += 1;
+  const debugTriggerEl = document.getElementById('debug-trigger');
+  if (!debugTriggerEl) return;
 
-    if (debugDiceTimerId !== null) {
-      window.clearTimeout(debugDiceTimerId);
+  debugTriggerEl.addEventListener('click', () => {
+    debugTriggerClicks += 1;
+
+    if (debugTriggerTimerId !== null) {
+      window.clearTimeout(debugTriggerTimerId);
     }
 
-    debugDiceTimerId = window.setTimeout(() => {
-      debugDiceClicks = 0;
-      debugDiceTimerId = null;
+    debugTriggerTimerId = window.setTimeout(() => {
+      debugTriggerClicks = 0;
+      debugTriggerTimerId = null;
     }, 900);
 
-    if (debugDiceClicks >= 5) {
-      debugDiceClicks = 0;
-      if (debugDiceTimerId !== null) {
-        window.clearTimeout(debugDiceTimerId);
-        debugDiceTimerId = null;
+    if (debugTriggerClicks >= 5) {
+      debugTriggerClicks = 0;
+      if (debugTriggerTimerId !== null) {
+        window.clearTimeout(debugTriggerTimerId);
+        debugTriggerTimerId = null;
       }
       toggleDebugMode();
     }
