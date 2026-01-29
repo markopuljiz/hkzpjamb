@@ -228,7 +228,12 @@ export function checkRowBonuses(tableId: string) {
 
 export function calculateGrandTotal() {
   let superTotal = 0;
-  ['t1', 't2'].forEach((tid) => {
+  const tableIds = ['t1', 't2'];
+  let filledCells = 0;
+  const playableRows = rows.filter((row) => !row.isSum).map((row) => row.id);
+  const totalCells = playableRows.length * columns.length * tableIds.length;
+
+  tableIds.forEach((tid) => {
     let tableSum = 0;
     for (let c = 0; c < 4; c += 1) {
       const el = document.getElementById(`${tid}_total_${c}`);
@@ -238,7 +243,17 @@ export function calculateGrandTotal() {
     tableSum += rowBonus;
     const grandEl = document.getElementById(`grand-total-${tid}`);
     if (grandEl) grandEl.innerText = String(tableSum);
+    const tableTotalEl = document.getElementById(`table-total-${tid}`);
+    if (tableTotalEl) tableTotalEl.innerText = String(tableSum);
     superTotal += tableSum;
+
+    for (let c = 0; c < columns.length; c += 1) {
+      const colScores = state.allScores[tid]?.[String(c)] || {};
+      playableRows.forEach((rowId) => {
+        const value = (colScores as Record<string, number | null | undefined>)[rowId];
+        if (value !== null && value !== undefined) filledCells += 1;
+      });
+    }
 
     const badge = document.getElementById(`${tid}-extra-badge`);
     const badgeVal = document.getElementById(`${tid}-extra-val`);
@@ -255,4 +270,9 @@ export function calculateGrandTotal() {
   });
   const superEl = document.getElementById('super-total');
   if (superEl) superEl.innerText = String(superTotal);
+  const progressEl = document.getElementById('progress-percent');
+  if (progressEl) {
+    const percent = totalCells > 0 ? Math.round((filledCells / totalCells) * 100) : 0;
+    progressEl.innerText = `${percent}%`;
+  }
 }

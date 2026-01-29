@@ -26,6 +26,7 @@ function initLanding() {
   const lobbyBackBtn = document.getElementById('lobby-back-btn');
   const resetBtn = document.getElementById('reset-btn');
   const viewScoresBtn = document.getElementById('view-scores-btn');
+  const roomCodeLabel = document.getElementById('room-code-label');
 
   if (!landing || !app || !singleBtn || !homeLink || !multiplayer || !lobby || !multiBtn || !multiHomeLink || !lobbyBackBtn) {
     return;
@@ -53,9 +54,10 @@ function initLanding() {
     section.dispatchEvent(new Event('show'));
   };
 
-  const syncHeaderActions = (sessionActive) => {
+  const syncHeaderActions = (sessionActive, sessionCode) => {
     if (resetBtn) resetBtn.classList.toggle('hidden', sessionActive);
     if (viewScoresBtn) viewScoresBtn.classList.toggle('hidden', !sessionActive);
+    if (roomCodeLabel) roomCodeLabel.textContent = sessionActive && sessionCode ? sessionCode : 'Dual Jamb';
   };
 
   const syncViewWithPath = async () => {
@@ -67,12 +69,12 @@ function initLanding() {
       const session = getMultiplayerSession();
       if (session.active && session.roomCode === code) {
         showSection(app);
-        syncHeaderActions(true);
+        syncHeaderActions(true, session.roomCode);
         return;
       }
 
       showSection(lobby);
-      syncHeaderActions(false);
+      syncHeaderActions(false, null);
       if (code && code !== lastLobbyCode) {
         lastLobbyCode = code;
         await multiplayerController?.enterLobby(code);
@@ -85,18 +87,18 @@ function initLanding() {
 
     if (path === '/single') {
       showSection(app);
-      syncHeaderActions(false);
+      syncHeaderActions(false, null);
       return;
     }
 
     if (path === '/multi') {
       showSection(multiplayer);
-      syncHeaderActions(false);
+      syncHeaderActions(false, null);
       return;
     }
 
     showSection(landing);
-    syncHeaderActions(false);
+    syncHeaderActions(false, null);
   };
 
   singleBtn.addEventListener('click', () => {

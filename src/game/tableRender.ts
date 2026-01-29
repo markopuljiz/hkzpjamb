@@ -13,8 +13,8 @@ export function renderTableContainer(tableConfig: TableConfig) {
         <thead class="${tableConfig.headerColor} text-white sticky-head shadow-sm">
             <tr>
                 <th class="p-2 w-14 sticky-col ${tableConfig.headerColor} sticky-corner border-b border-white/20">
-                  <span class="bg-${tableConfig.color}-600 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-semibold">
-                    ${tableConfig.id === 't1' ? 'A' : 'B'}
+                  <span id="table-total-${tableConfig.id}" class="bg-${tableConfig.color}-600 text-white min-w-[2.5rem] h-7 px-2 rounded-full inline-flex items-center justify-center text-sm font-semibold">
+                    0
                   </span>
                 </th>
                 <th class="p-2 w-1/4 border-l border-white/20"><i class="fas fa-arrow-down text-base opacity-90"></i></th>
