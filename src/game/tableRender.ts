@@ -52,7 +52,10 @@ export function renderTableContainer(tableConfig: TableConfig) {
       const cellId = `${tableConfig.id}_c${cIndex}_${row.id}`;
       const ghostId = `ghost_${tableConfig.id}_c${cIndex}_${row.id}`;
 
-      html += `<td class="border-l border-b border-slate-200 p-0 relative h-10">`;
+      const cellClasses = `border-l border-b border-slate-200 p-0 relative h-10${
+        isSum ? '' : ' score-cell'
+      }`;
+      html += `<td class="${cellClasses}">`;
       if (isSum) {
         html += `<div id="${cellId}" class="flex flex-col items-center justify-center w-full h-full text-${baseColor}-700 transition-all duration-300 leading-none text-lg">0</div>`;
       } else {

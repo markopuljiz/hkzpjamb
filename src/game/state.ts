@@ -15,6 +15,7 @@ export const state: {
   isRolling: boolean;
   najavaActive: boolean;
   najavaRowId: string | null;
+  viewOnlyActive: boolean;
 } = {
   allScores: { t1: {}, t2: {} },
   diceValues: [null, null, null, null, null],
@@ -25,5 +26,6 @@ export const state: {
   najavaButton: null,
   isRolling: false,
   najavaActive: false,
-  najavaRowId: null
+  najavaRowId: null,
+  viewOnlyActive: false
 };

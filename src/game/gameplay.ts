@@ -51,6 +51,7 @@ export function init() {
 }
 
 export function updateState(tableId: string, colIndex: number, rowId: string, val: number | null) {
+  if (state.viewOnlyActive) return;
   if (!state.allScores[tableId]) state.allScores[tableId] = {};
   const colKey = String(colIndex);
   if (!state.allScores[tableId][colKey]) state.allScores[tableId][colKey] = {};
@@ -86,6 +87,7 @@ export function updateState(tableId: string, colIndex: number, rowId: string, va
 }
 
 export function applyAutoScore(tableId: string, colIndex: number, rowId: string) {
+  if (state.viewOnlyActive) return;
   const rowConfig = rows.find((row) => row.id === rowId);
   if (!rowConfig || rowConfig.isSum) return;
 

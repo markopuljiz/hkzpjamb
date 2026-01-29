@@ -1,6 +1,8 @@
 import { supabase } from './supabaseClient.js';
 import { getMultiplayerSession } from './multiplayerState.js';
 import { columns, rows } from './game/config';
+import { applyScoresSnapshot, loadScores } from './game/storage';
+import { state } from './game/state';
 
 const tableIds = ['t1', 't2'];
 const columnIndices = [0, 1, 2, 3];
@@ -8,9 +10,14 @@ const sum1Rows = ['1', '2', '3', '4', '5', '6'];
 const sum3Rows = ['str', 'full', 'poker', 'yamb'];
 const playableRows = rows.filter((row) => !row.isSum).map((row) => row.id);
 const totalPlayableCells = playableRows.length * columns.length * tableIds.length;
+const opponentPollIntervalMs = 4000;
 
 function hasValue(value) {
   return value !== null && value !== undefined;
+}
+
+function cloneScoresSnapshot(scores) {
+  return JSON.parse(JSON.stringify(scores || { t1: {}, t2: {} }));
 }
 
 function computeColumnTotals(colScores) {
@@ -50,7 +57,7 @@ function computeColumnTotals(colScores) {
   return { sum1Total, sum2Total, colTotal, sum1Ready };
 }
 
-function computeTotals(allScores) {
+export function computeTotals(allScores) {
   let superTotal = 0;
   const tableTotals = {};
 
@@ -92,7 +99,7 @@ function computeTotals(allScores) {
   return { tableTotals, superTotal };
 }
 
-function computeCompletionPercent(tableScores) {
+export function computeCompletionPercent(tableScores) {
   let filled = 0;
   tableIds.forEach((tableId) => {
     const tableData = tableScores[tableId] || {};
@@ -156,15 +163,70 @@ export function initMultiplayerScores() {
   const closeBtn = document.getElementById('scores-modal-close');
   const overlay = document.getElementById('scores-modal-overlay');
   const opponentSummary = document.getElementById('opponent-summary');
+  const diceControls = document.getElementById('dice-controls');
+  const viewOnlyControls = document.getElementById('view-only-controls');
+  const viewOnlyName = document.getElementById('view-only-name');
+  const viewOnlyReturnBtn = document.getElementById('view-only-return-btn');
 
   let isDraggingOpponents = false;
   let opponentDragStartX = 0;
   let opponentScrollStart = 0;
+  let opponentClickSuppressed = false;
 
   let opponentIntervalId = null;
+  let viewOnlySessionId = null;
+  let localScoresSnapshot = null;
+  let opponentCache = new Map();
 
   const closeModal = () => {
     modal?.classList.add('hidden');
+  };
+
+  const updateOpponentHighlight = () => {
+    if (!opponentSummary) return;
+    const buttons = opponentSummary.querySelectorAll('[data-opponent-session]');
+    buttons.forEach((button) => {
+      const sessionId = button.dataset.opponentSession;
+      const isActive = !!viewOnlySessionId && sessionId === viewOnlySessionId;
+      button.classList.toggle('bg-amber-500/20', isActive);
+      button.classList.toggle('border-amber-300', isActive);
+      button.classList.toggle('text-amber-50', isActive);
+      button.classList.toggle('bg-slate-900/50', !isActive);
+      button.classList.toggle('border-white/5', !isActive);
+    });
+  };
+
+  const setViewOnlyMode = ({ active, sessionId = null, name = 'Opponent', scores = null }) => {
+    if (active && !state.viewOnlyActive) {
+      localScoresSnapshot = cloneScoresSnapshot(state.allScores);
+    }
+
+    state.viewOnlyActive = active;
+    viewOnlySessionId = active ? sessionId : null;
+
+    document.body.classList.toggle('view-only', active);
+    diceControls?.classList.toggle('hidden', active);
+    viewOnlyControls?.classList.toggle('hidden', !active);
+
+    if (active) {
+      if (viewOnlyName) viewOnlyName.textContent = name || 'Opponent';
+      if (scores) applyScoresSnapshot(scores);
+    } else {
+      if (localScoresSnapshot) {
+        applyScoresSnapshot(localScoresSnapshot);
+      } else {
+        loadScores();
+      }
+      localScoresSnapshot = null;
+    }
+
+    updateOpponentHighlight();
+  };
+
+  const openViewOnlyOpponent = ({ sessionId, name, scores }) => {
+    if (!sessionId || !scores) return;
+    if (state.viewOnlyActive && viewOnlySessionId === sessionId) return;
+    setViewOnlyMode({ active: true, sessionId, name, scores });
   };
 
   const updateOpponentSummary = async () => {
@@ -206,12 +268,29 @@ export function initMultiplayerScores() {
     });
 
     const playerList = players?.length ? players : [{ session_id: session.sessionId, name: 'Player 1' }];
+    opponentCache = new Map();
+    playerList.forEach((player, index) => {
+      const name = player.name || `Player ${index + 1}`;
+      const tableScores = scoresBySession.get(player.session_id) || { t1: {}, t2: {} };
+      opponentCache.set(player.session_id, { name, scores: tableScores });
+    });
     const opponents = playerList.filter((player) => player.session_id !== session.sessionId);
 
     if (!opponents.length) {
       opponentSummary.classList.add('hidden');
       opponentSummary.textContent = '';
+      if (state.viewOnlyActive) {
+        setViewOnlyMode({ active: false });
+      }
       return;
+    }
+
+    if (state.viewOnlyActive && viewOnlySessionId) {
+      const cached = opponentCache.get(viewOnlySessionId);
+      if (cached) {
+        if (viewOnlyName) viewOnlyName.textContent = cached.name || 'Opponent';
+        applyScoresSnapshot(cached.scores);
+      }
     }
 
     const opponentData = opponents
@@ -221,28 +300,43 @@ export function initMultiplayerScores() {
         const percent = computeCompletionPercent(tableScores);
         const nameIndex = playerList.findIndex((p) => p.session_id === player.session_id);
         const name = player.name || `Player ${nameIndex + 1}`;
-        return { name, total: totals.superTotal, percent };
+        return { name, total: totals.superTotal, percent, sessionId: player.session_id };
       })
       .sort((a, b) => b.total - a.total);
 
     opponentSummary.innerHTML = opponentData
       .map((opponent) => `
-        <div class="flex items-center gap-1.5 bg-slate-900/50 px-2 py-0.5 rounded-lg border border-white/5">
+        <button
+          class="flex items-center gap-1.5 px-2 py-0.5 rounded-lg border transition-colors ${
+            viewOnlySessionId === opponent.sessionId
+              ? 'bg-amber-500/20 border-amber-300 text-amber-50'
+              : 'bg-slate-900/50 border-white/5'
+          }"
+          data-opponent-session="${opponent.sessionId}"
+          data-opponent-name="${opponent.name}"
+          type="button"
+        >
           <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter opacity-80">${opponent.name}</span>
           <i class="fas fa-star text-yellow-400 text-[10px]"></i>
           <span class="font-mono font-bold text-white text-sm leading-none">${opponent.total}</span>
           <span class="text-[9px] text-slate-500">${opponent.percent}%</span>
-        </div>
+        </button>
       `)
       .join('');
     opponentSummary.classList.remove('hidden');
     opponentSummary.classList.add('flex');
+
+    updateOpponentHighlight();
+
+    if (state.viewOnlyActive && viewOnlySessionId && !opponentCache.has(viewOnlySessionId)) {
+      setViewOnlyMode({ active: false });
+    }
   };
 
   const startOpponentPolling = () => {
     if (opponentIntervalId) return;
     updateOpponentSummary();
-    opponentIntervalId = window.setInterval(updateOpponentSummary, 10000);
+    opponentIntervalId = window.setInterval(updateOpponentSummary, opponentPollIntervalMs);
   };
 
   if (opponentSummary) {
@@ -251,12 +345,14 @@ export function initMultiplayerScores() {
       isDraggingOpponents = true;
       opponentDragStartX = event.clientX;
       opponentScrollStart = opponentSummary.scrollLeft;
+      opponentClickSuppressed = false;
       opponentSummary.classList.add('active');
     });
 
     window.addEventListener('mousemove', (event) => {
       if (!isDraggingOpponents) return;
       const delta = event.clientX - opponentDragStartX;
+      if (Math.abs(delta) > 6) opponentClickSuppressed = true;
       opponentSummary.scrollLeft = opponentScrollStart - delta;
     });
 
@@ -269,6 +365,19 @@ export function initMultiplayerScores() {
       if (!isDraggingOpponents) return;
       isDraggingOpponents = false;
       opponentSummary.classList.remove('active');
+    });
+
+    opponentSummary.addEventListener('click', (event) => {
+      const target = event.target.closest('[data-opponent-session]');
+      if (!target) return;
+      if (opponentClickSuppressed) {
+        opponentClickSuppressed = false;
+        return;
+      }
+      const sessionId = target.dataset.opponentSession;
+      const cached = opponentCache.get(sessionId);
+      if (!cached) return;
+      openViewOnlyOpponent({ sessionId, name: cached.name, scores: cached.scores });
     });
   }
 
@@ -353,10 +462,13 @@ export function initMultiplayerScores() {
     openModal();
   });
   playerScorePill?.addEventListener('click', () => {
-    openModal();
+    if (state.viewOnlyActive) {
+      setViewOnlyMode({ active: false });
+    }
   });
   closeBtn?.addEventListener('click', closeModal);
   overlay?.addEventListener('click', closeModal);
+  viewOnlyReturnBtn?.addEventListener('click', () => setViewOnlyMode({ active: false }));
 
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
@@ -377,6 +489,9 @@ export function initMultiplayerScores() {
       if (opponentSummary) {
         opponentSummary.classList.add('hidden');
         opponentSummary.textContent = '';
+      }
+      if (state.viewOnlyActive) {
+        setViewOnlyMode({ active: false });
       }
     }
   });

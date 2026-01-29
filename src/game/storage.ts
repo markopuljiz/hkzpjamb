@@ -101,6 +101,11 @@ function applyScoresToUi() {
   refreshAllGhosts();
 }
 
+export function applyScoresSnapshot(nextScores: typeof state.allScores) {
+  state.allScores = nextScores || { t1: {}, t2: {} };
+  applyScoresToUi();
+}
+
 export async function loadScores() {
   const session = getMultiplayerSession();
   if (session.active && session.roomId && session.sessionId && supabase) {

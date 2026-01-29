@@ -137,6 +137,28 @@ body.dark-mode .table-shell {
   border-color: #1e293b;
 }
 
+body.view-only .table-shell {
+  border-top-color: #f59e0b !important;
+  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.18);
+}
+
+body.view-only #score-summary-bar {
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.15), inset 0 0 18px rgba(245, 158, 11, 0.1);
+}
+
+body.view-only header {
+  background-color: #1f2937;
+}
+
+body.view-only td.score-cell {
+  background-color: rgba(15, 23, 42, 0.04);
+}
+
+body.dark-mode.view-only td.score-cell {
+  background-color: rgba(148, 163, 184, 0.08);
+}
+
 body.dark-mode table {
   background-color: #0b1220;
   color: #e2e8f0;

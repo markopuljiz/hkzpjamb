@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient.js';
 import { setMultiplayerSession } from './multiplayerState.js';
 import { loadScores } from './game/storage';
+import { computeCompletionPercent, computeTotals } from './multiplayerScores.js';
 
 const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const sessionStorageKey = 'yamb_multiplayer_session';
@@ -52,19 +53,44 @@ function setLoading(button, loadingText) {
   };
 }
 
-function buildRoomCard({ code, status, created_at, playersCount }) {
+function buildRoomCard({ code, status, created_at, players }) {
   const wrapper = document.createElement('div');
-  wrapper.className = 'border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col gap-2';
+  wrapper.className = 'border border-slate-200 rounded-xl p-3 bg-slate-50 flex flex-col gap-2 shadow-sm';
 
   const statusLabel = status === 'finished' ? 'Finished' : status === 'active' ? 'In progress' : 'Lobby';
   const meta = new Date(created_at).toLocaleString();
+
+  const playerRows = players?.length
+    ? `
+        <div class="flex items-center justify-between text-[10px] uppercase tracking-[0.22em] text-slate-400">
+          <span>Players</span>
+          <span>Score · Done</span>
+        </div>
+        <div class="flex flex-col gap-1">
+          ${players
+            .map(
+              (player) => `
+                <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200/70 bg-white/70 px-2 py-1 text-xs">
+                  <span class="font-semibold text-slate-800 truncate" title="${player.name}">${player.name}</span>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="font-mono font-semibold text-slate-900">${player.score}</span>
+                    <span class="text-slate-500">${player.percent}%</span>
+                  </div>
+                </div>
+              `
+            )
+            .join('')}
+        </div>
+      `
+    : '<div class="text-xs text-slate-400">No players yet.</div>';
 
   wrapper.innerHTML = `
     <div class="flex items-center justify-between">
       <span class="text-lg font-semibold text-slate-900 tracking-[0.2em]">${code}</span>
       <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">${statusLabel}</span>
     </div>
-    <div class="text-sm text-slate-500">${playersCount} player${playersCount === 1 ? '' : 's'} · ${meta}</div>
+    <div class="text-xs text-slate-500">${meta}</div>
+    ${playerRows}
   `;
 
   return wrapper;
@@ -155,18 +181,49 @@ export function initMultiplayer({ onNavigate }) {
     const roomIds = rooms.map((room) => room.id);
     const { data: players } = await supabase
       .from('yamb_players')
-      .select('room_id')
+      .select('room_id, session_id, name, joined_at')
       .in('room_id', roomIds);
 
-    const countByRoom = players?.reduce((acc, player) => {
-      acc[player.room_id] = (acc[player.room_id] || 0) + 1;
+    const { data: scores } = await supabase
+      .from('yamb_scores')
+      .select('room_id, session_id, table_id, column_index, row_id, value')
+      .in('room_id', roomIds);
+
+    const playersByRoom = players?.reduce((acc, player) => {
+      if (!acc[player.room_id]) acc[player.room_id] = [];
+      acc[player.room_id].push(player);
+      return acc;
+    }, {}) ?? {};
+
+    Object.values(playersByRoom).forEach((roomPlayers) => {
+      roomPlayers.sort((a, b) => new Date(a.joined_at) - new Date(b.joined_at));
+    });
+
+    const scoresByRoom = scores?.reduce((acc, row) => {
+      if (!acc[row.room_id]) acc[row.room_id] = {};
+      if (!acc[row.room_id][row.session_id]) acc[row.room_id][row.session_id] = { t1: {}, t2: {} };
+      const tableScores = acc[row.room_id][row.session_id];
+      if (!tableScores[row.table_id]) tableScores[row.table_id] = {};
+      const tableData = tableScores[row.table_id];
+      const colKey = String(row.column_index);
+      if (!tableData[colKey]) tableData[colKey] = {};
+      tableData[colKey][row.row_id] = row.value;
       return acc;
     }, {}) ?? {};
 
     rooms.forEach((room) => {
+      const roomPlayers = playersByRoom[room.id] || [];
+      const playerSummaries = roomPlayers.map((player, index) => {
+        const name = player.name?.trim() || `Player ${index + 1}`;
+        const tableScores = scoresByRoom[room.id]?.[player.session_id] || { t1: {}, t2: {} };
+        const totals = computeTotals(tableScores);
+        const percent = computeCompletionPercent(tableScores);
+        return { name, score: totals.superTotal, percent };
+      });
+
       const card = buildRoomCard({
         ...room,
-        playersCount: countByRoom[room.id] || 0
+        players: playerSummaries
       });
       roomsList.appendChild(card);
     });
