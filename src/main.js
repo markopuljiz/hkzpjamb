@@ -4,6 +4,9 @@ import './index.css';
 
 import { init, applyAutoScore, resetGame, najavaExports, updateState } from './game/gameplay';
 import { initDebugMode } from './debugMode.js';
+import { initMultiplayer } from './multiplayer.js';
+import { getMultiplayerSession } from './multiplayerState.js';
+import { initMultiplayerScores } from './multiplayerScores.js';
 
 Object.assign(window, {
   resetGame,
@@ -14,41 +17,118 @@ Object.assign(window, {
 function initLanding() {
   const landing = document.getElementById('landing');
   const app = document.getElementById('app');
+  const multiplayer = document.getElementById('multiplayer');
+  const lobby = document.getElementById('lobby');
   const singleBtn = document.getElementById('start-single');
+  const multiBtn = document.getElementById('start-multi');
   const homeLink = document.getElementById('home-link');
+  const multiHomeLink = document.getElementById('multi-home-link');
+  const lobbyBackBtn = document.getElementById('lobby-back-btn');
+  const resetBtn = document.getElementById('reset-btn');
+  const viewScoresBtn = document.getElementById('view-scores-btn');
 
-  if (!landing || !app || !singleBtn || !homeLink) return;
+  if (!landing || !app || !singleBtn || !homeLink || !multiplayer || !lobby || !multiBtn || !multiHomeLink || !lobbyBackBtn) {
+    return;
+  }
 
-  const showLanding = () => {
-    landing.classList.remove('hidden');
-    app.classList.add('hidden');
-  };
-
-  const showApp = () => {
-    landing.classList.add('hidden');
-    app.classList.remove('hidden');
-  };
-
-  const syncViewWithHash = () => {
-    if (window.location.hash === '#single') {
-      showApp();
-    } else {
-      showLanding();
+  const multiplayerController = initMultiplayer({
+    onNavigate: (path) => {
+      window.history.pushState({}, '', path);
+      syncViewWithPath();
     }
+  });
+
+  let lastLobbyCode = null;
+
+  const hideAll = () => {
+    landing.classList.add('hidden');
+    app.classList.add('hidden');
+    multiplayer.classList.add('hidden');
+    lobby.classList.add('hidden');
+  };
+
+  const showSection = (section) => {
+    hideAll();
+    section.classList.remove('hidden');
+    section.dispatchEvent(new Event('show'));
+  };
+
+  const syncHeaderActions = (sessionActive) => {
+    if (resetBtn) resetBtn.classList.toggle('hidden', sessionActive);
+    if (viewScoresBtn) viewScoresBtn.classList.toggle('hidden', !sessionActive);
+  };
+
+  const syncViewWithPath = async () => {
+    const path = window.location.pathname.replace(/\/$/, '');
+    const codeMatch = path.match(/^\/(?:lobby\/)?([A-Za-z]{4})$/);
+
+    if (codeMatch) {
+      const code = codeMatch[1].toUpperCase();
+      const session = getMultiplayerSession();
+      if (session.active && session.roomCode === code) {
+        showSection(app);
+        syncHeaderActions(true);
+        return;
+      }
+
+      showSection(lobby);
+      syncHeaderActions(false);
+      if (code && code !== lastLobbyCode) {
+        lastLobbyCode = code;
+        await multiplayerController?.enterLobby(code);
+      }
+      return;
+    }
+
+    lastLobbyCode = null;
+    multiplayerController?.resetLobby();
+
+    if (path === '/single') {
+      showSection(app);
+      syncHeaderActions(false);
+      return;
+    }
+
+    if (path === '/multi') {
+      showSection(multiplayer);
+      syncHeaderActions(false);
+      return;
+    }
+
+    showSection(landing);
+    syncHeaderActions(false);
   };
 
   singleBtn.addEventListener('click', () => {
-    window.location.hash = 'single';
+    window.history.pushState({}, '', '/single');
+    syncViewWithPath();
+  });
+
+  multiBtn.addEventListener('click', () => {
+    window.history.pushState({}, '', '/multi');
+    syncViewWithPath();
   });
 
   homeLink.addEventListener('click', () => {
-    window.location.hash = '';
+    window.history.pushState({}, '', '/');
+    syncViewWithPath();
   });
 
-  window.addEventListener('hashchange', syncViewWithHash);
-  syncViewWithHash();
+  multiHomeLink.addEventListener('click', () => {
+    window.history.pushState({}, '', '/');
+    syncViewWithPath();
+  });
+
+  lobbyBackBtn.addEventListener('click', () => {
+    window.history.pushState({}, '', '/multi');
+    syncViewWithPath();
+  });
+
+  window.addEventListener('popstate', syncViewWithPath);
+  syncViewWithPath();
 }
 
 init();
 initDebugMode({ updateState });
+initMultiplayerScores();
 initLanding();

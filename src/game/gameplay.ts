@@ -10,6 +10,29 @@ import { initFontSizeToggle } from './fontSizeToggle';
 import { initDarkModeToggle } from './darkModeToggle';
 import { state } from './state';
 import { initUndo, isUndoInProgress, registerUndoWrite } from './undo';
+import { supabase } from '../supabaseClient.js';
+import { getMultiplayerSession } from '../multiplayerState.js';
+
+async function persistMultiplayerScore(tableId: string, colIndex: number, rowId: string, val: number | null) {
+  if (!supabase) return;
+  const session = getMultiplayerSession();
+  if (!session.active || !session.roomId || !session.sessionId) return;
+
+  await supabase
+    .from('yamb_scores')
+    .upsert(
+      {
+        room_id: session.roomId,
+        session_id: session.sessionId,
+        table_id: tableId,
+        column_index: colIndex,
+        row_id: rowId,
+        value: val,
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: 'room_id,session_id,table_id,column_index,row_id' }
+    );
+}
 
 declare global {
   interface Window {
@@ -55,6 +78,7 @@ export function updateState(tableId: string, colIndex: number, rowId: string, va
   calculateColumn(tableId, colIndex);
   updatePeerGhost(tableId, colIndex, rowId, val);
   saveScores();
+  persistMultiplayerScore(tableId, colIndex, rowId, val);
 
   if (val !== null && typeof window.resetRollState === 'function') {
     window.resetRollState();

@@ -1,6 +1,8 @@
 import { state } from './state';
 import { calculateColumn } from './scoring';
 import { refreshAllGhosts } from './ghosts';
+import { supabase } from '../supabaseClient.js';
+import { getMultiplayerSession } from '../multiplayerState.js';
 
 const diceStateStorageKey = 'dual_jamb_dice_v1';
 
@@ -53,30 +55,79 @@ export function clearDiceState() {
 }
 
 export function saveScores() {
+  const session = getMultiplayerSession();
+  if (session.active) return;
   localStorage.setItem('dual_jamb_scores_v10', JSON.stringify(state.allScores));
 }
 
-export function loadScores() {
+function applyScoresToUi() {
+  document.querySelectorAll('input[type="text"]').forEach((input) => {
+    (input as HTMLInputElement).value = '';
+  });
+  document.querySelectorAll('[id*="_sum"]').forEach((s) => {
+    s.innerHTML = '0';
+    s.removeAttribute('data-val');
+    s.removeAttribute('data-bonus');
+  });
+  document
+    .querySelectorAll('[id*="_total_"], span[id*="grand-total"], #super-total')
+    .forEach((s) => {
+      (s as HTMLElement).innerText = '0';
+    });
+  document.querySelectorAll('.row-bonus-active').forEach((el) => el.classList.remove('row-bonus-active'));
+  document.querySelectorAll('.crossed-out').forEach((el) => el.classList.remove('crossed-out'));
+  document
+    .querySelectorAll('[id*="_badge_"], [id$="-extra-badge"]')
+    .forEach((el) => el.classList.add('hidden'));
+  document.querySelectorAll('[id^="ghost_"]').forEach((el) => {
+    (el as HTMLElement).innerText = '';
+  });
+
+  if (!(state.allScores as any).t1) state.allScores = { t1: {}, t2: {} };
+  ['t1', 't2'].forEach((tid) => {
+    const tableData = state.allScores[tid] || {};
+    Object.keys(tableData).forEach((colIdx) => {
+      Object.entries(tableData[colIdx] ?? {}).forEach(([rowId, val]) => {
+        const el = document.getElementById(`${tid}_c${colIdx}_${rowId}`) as HTMLInputElement | null;
+        if (el) {
+          el.value = val === null ? '' : String(val);
+          if (val === 0) el.parentElement?.classList.add('crossed-out');
+          else el.parentElement?.classList.remove('crossed-out');
+        }
+      });
+      calculateColumn(tid, colIdx as any);
+    });
+  });
+  refreshAllGhosts();
+}
+
+export async function loadScores() {
+  const session = getMultiplayerSession();
+  if (session.active && session.roomId && session.sessionId && supabase) {
+    const { data, error } = await supabase
+      .from('yamb_scores')
+      .select('table_id, column_index, row_id, value')
+      .eq('room_id', session.roomId)
+      .eq('session_id', session.sessionId);
+
+    if (!error) {
+      state.allScores = { t1: {}, t2: {} };
+      data?.forEach((score: { table_id: string; column_index: number; row_id: string; value: number | null }) => {
+        const colKey = String(score.column_index);
+        if (!state.allScores[score.table_id]) state.allScores[score.table_id] = {};
+        if (!state.allScores[score.table_id][colKey]) state.allScores[score.table_id][colKey] = {};
+        state.allScores[score.table_id][colKey][score.row_id] = score.value;
+      });
+      applyScoresToUi();
+      return;
+    }
+  }
+
   const saved = localStorage.getItem('dual_jamb_scores_v10');
   if (saved) {
     try {
       state.allScores = JSON.parse(saved);
-      if (!(state.allScores as any).t1) state.allScores = { t1: {}, t2: {} };
-      ['t1', 't2'].forEach((tid) => {
-        const tableData = state.allScores[tid] || {};
-        Object.keys(tableData).forEach((colIdx) => {
-          Object.entries(tableData[colIdx] ?? {}).forEach(([rowId, val]) => {
-            const el = document.getElementById(`${tid}_c${colIdx}_${rowId}`) as HTMLInputElement | null;
-            if (el) {
-              el.value = val === null ? '' : String(val);
-              if (val === 0) el.parentElement?.classList.add('crossed-out');
-              else el.parentElement?.classList.remove('crossed-out');
-            }
-          });
-          calculateColumn(tid, colIdx as any);
-        });
-      });
-      refreshAllGhosts();
+      applyScoresToUi();
     } catch {
       state.allScores = { t1: {}, t2: {} };
     }
